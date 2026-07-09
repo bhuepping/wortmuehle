@@ -48,5 +48,5 @@ insgesamt unter GPL-3.0 weitergegeben.
 oben genannten, öffentlich herunterladbaren Quellen; Filterung über
 Wiktionary-Wortarten und einen Vornamen-Gazetteer, der ausschließlich zum
 *Ausschluss* von Namen dient — sein Inhalt landet nicht in der App). Das
-Skript ist Eigenentwicklung; bei Interesse an der Veröffentlichung gerne ein
-Issue aufmachen.
+Skript liegt samt Erläuterung unter
+[`tools/pool-generator/`](tools/pool-generator/).

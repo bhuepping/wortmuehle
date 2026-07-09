@@ -8,9 +8,13 @@
 set -euo pipefail
 PIG=/home/bjoern/claude/piGallery
 APP=/home/bjoern/claude/wortmuehle-app
+GEN=/home/bjoern/claude/buchstabiene
 
 cp "$PIG/static/wortmuehle.css" "$APP/www/wortmuehle.css"
 cp "$PIG/static/wortmuehle.js"  "$APP/www/wortmuehle.js"
+
+# Pool-Generator verbatim mitspiegeln (Transparenz/Provenienz; kanonisch bleibt $GEN)
+cp "$GEN/build_db.py" "$GEN/blacklist.txt" "$GEN/extra_words.txt" "$APP/tools/pool-generator/"
 
 # voller Pool, sortiert nach id = Server-Rotationsordnung (Schema 5, ein Rätsel/Tag)
 python3 - "$PIG/data/wortmuehle_pool.json" "$APP/www/pool.json" <<'PY'

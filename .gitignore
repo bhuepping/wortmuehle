@@ -1,5 +1,6 @@
 node_modules/
 *.apk
+tools/pool-generator/.cache/
 
 # Release signing — never commit; back up separately!
 release.keystore
