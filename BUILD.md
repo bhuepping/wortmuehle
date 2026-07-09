@@ -1,8 +1,9 @@
 # Wortmühle — Offline-APK
 
 Capacitor-Wrapper um das Vanilla-JS-Webspiel aus `piGallery`. **Der komplette
-Rätselpool (2827 Rätsel) ist eingebacken** → läuft vollständig offline, kein Pi nötig.
-Einzige Online-Funktion: die Worterklärungen von de.wiktionary (fehlen ohne Netz still).
+Rätselpool (~2800 Rätsel) ist eingebacken** → läuft vollständig offline, kein Pi nötig.
+Einzige Online-Funktion: die Worterklärungen von de.wiktionary (ohne Netz erscheint
+an ihrer Stelle ein Hinweis, das Spiel läuft unverändert).
 
 ## Aufbau
 - `www/` — die Web-App (Quelle für den APK)
@@ -11,13 +12,14 @@ Einzige Online-Funktion: die Worterklärungen von de.wiktionary (fehlen ohne Net
     - `puzzleFor()` hat eine **Modulo-Fallback-Rotation** (`list[day % len]`), die exakt
       dieselbe Tagesrätsel-Wahl liefert wie der Pi-Server — verifiziert gegen `app.py`.
     - `dayLoaded()` meldet jeden Tag als spielbar (voller Pool im Speicher).
-  - `pool.json` — voller Pool, sortiert nach `(diff,id)` (= Server-Rotationsordnung)
+  - `pool.json` — voller Pool, sortiert nach `id` (= Server-Rotationsordnung, Schema 5)
 - `android/` — von `npx cap add android` generiertes Gradle-Projekt
 - `capacitor.config.json` — appId `de.huepping.wortmuehle`, webDir `www`
 
 ## Web-Assets aktualisieren (nach Spiel-Änderungen in piGallery)
 ```sh
 ./sync-www.sh          # kopiert css/js aus piGallery, backt pool.json neu,
+                       # spiegelt den Pool-Generator nach tools/pool-generator/,
                        # re-applied die Offline-Patches (s.u.) idempotent, cap sync
 ```
 **Wichtig:** Nie `cp piGallery/static/wortmuehle.js www/` von Hand — das überschreibt die

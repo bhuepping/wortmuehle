@@ -10,7 +10,7 @@ folgen den Buchstabenwerten des deutschen Scrabble.
 
 Der komplette Rätselpool (~2800 Rätsel) ist in die App eingebaut — sie braucht
 keine Internetverbindung. Einzige Online-Funktion: Worterklärungen von
-de.wiktionary.org (fehlen ohne Netz still).
+de.wiktionary.org (ohne Netz erscheint an ihrer Stelle ein Hinweis).
 
 ## Technik
 
