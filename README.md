@@ -40,3 +40,10 @@ Der Rätselpool (`www/pool.json`) ist ein aus freien Quellen abgeleitetes Werk:
 
 CC BY-SA 4.0 ist einseitig GPL-3-kompatibel; der abgeleitete Pool wird daher
 insgesamt unter GPL-3.0 weitergegeben.
+
+`pool.json` wird von einem ETL-Skript erzeugt (SQLite-Lexikon aus den drei
+oben genannten, öffentlich herunterladbaren Quellen; Filterung über
+Wiktionary-Wortarten und einen Vornamen-Gazetteer, der ausschließlich zum
+*Ausschluss* von Namen dient — sein Inhalt landet nicht in der App). Das
+Skript ist Eigenentwicklung; bei Interesse an der Veröffentlichung gerne ein
+Issue aufmachen.

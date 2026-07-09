@@ -32,8 +32,7 @@ Builds:
     sudo:
       - apt-get update
       - apt-get install -y --no-install-recommends npm
-    init:
-      - cd ../.. && npm ci && npx cap sync android
+    init: cd ../.. && npm ci && npx cap sync android
     gradle:
       - yes
 
