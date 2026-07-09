@@ -15,8 +15,11 @@ de.wiktionary.org (fehlen ohne Netz still).
 ## Technik
 
 Capacitor-Wrapper (WebView) um ein Vanilla-JS-Webspiel. Kein Tracking, keine
-Werbung, keine Google-Dienste, keine Berechtigungen außer Internet (für die
-Wiktionary-Erklärungen). Details zum Bauen: [BUILD.md](BUILD.md).
+Werbung, keine Google-Dienste. Einzige Berechtigung ist INTERNET, und die
+dient ausschließlich den Wiktionary-Worterklärungen — ohne Netz zeigt die
+App an der Stelle „Keine Verbindung — Worterklärungen kommen von
+de.wiktionary.org", alles andere funktioniert unverändert.
+Details zum Bauen: [BUILD.md](BUILD.md).
 
 ## Lizenz
 

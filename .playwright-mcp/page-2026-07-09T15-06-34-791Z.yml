@@ -1,0 +1,23 @@
+- main [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - heading "Wortmühle" [level=1] [ref=f3e4]
+    - button "Heute ▾" [ref=f3e6] [cursor=pointer]
+  - generic [ref=f3e7]:
+    - generic [ref=f3e8]: 0/489 Pkt · 0 %
+    - generic [ref=f3e9]: 0/56 Wörter · 0 %
+  - generic [ref=f3e12]:
+    - button "G" [ref=f3e13] [cursor=pointer]
+    - button "T" [ref=f3e15] [cursor=pointer]
+    - button "S" [ref=f3e17] [cursor=pointer]
+    - button "B" [ref=f3e19] [cursor=pointer]
+    - button "M" [ref=f3e21] [cursor=pointer]
+    - button "R" [ref=f3e23] [cursor=pointer]
+    - button "N" [ref=f3e25] [cursor=pointer]
+    - button "U" [ref=f3e27] [cursor=pointer]
+    - button "I" [ref=f3e29] [cursor=pointer]
+  - generic [ref=f3e31]:
+    - button "Löschen" [ref=f3e32] [cursor=pointer]
+    - button "Mischen" [ref=f3e33] [cursor=pointer]
+    - button "Enter" [ref=f3e34] [cursor=pointer]
+  - button "Aufgeben" [ref=f3e35] [cursor=pointer]
+  - region "Gefundene Wörter"

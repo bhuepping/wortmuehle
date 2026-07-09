@@ -19,7 +19,8 @@ Description: |-
 
   Der komplette Rätselpool (~2800 Rätsel) ist eingebaut — die App läuft
   vollständig offline. Einzige Online-Funktion: Worterklärungen von
-  de.wiktionary.org.
+  de.wiktionary.org. Allein dafür existiert die INTERNET-Berechtigung;
+  ohne Verbindung weist die App an der Stelle darauf hin.
 
 RepoType: git
 Repo: https://github.com/bhuepping/wortmuehle.git

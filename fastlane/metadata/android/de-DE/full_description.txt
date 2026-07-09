@@ -8,4 +8,6 @@ Merkmale:
 • Worterklärungen per Antippen (von de.wiktionary.org, einzige Online-Funktion)
 • Kein Tracking, keine Werbung, keine Konten, keine Google-Dienste
 
+Die INTERNET-Berechtigung dient ausschließlich diesen Wiktionary-Abfragen. Ohne Verbindung weist die App darauf hin; das Spiel selbst funktioniert vollständig offline.
+
 Der Wortschatz basiert auf freien Quellen (igerman98-Wortliste, de.wiktionary, OpenSubtitles-Häufigkeitsliste).

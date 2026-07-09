@@ -1,0 +1,26 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Wortmühle" [level=1] [ref=e4]
+    - button "Heute ▾" [ref=e6] [cursor=pointer]
+  - generic [ref=e7]:
+    - generic [ref=e8]: 16/489 Pkt · 3 %
+    - generic [ref=e9]: 3/56 Wörter · 5 %
+  - generic [ref=e12]:
+    - button "N" [ref=e13] [cursor=pointer]
+    - button "T" [ref=e15] [cursor=pointer]
+    - button "I" [ref=e17] [cursor=pointer]
+    - button "G" [ref=e19] [cursor=pointer]
+    - button "M" [ref=e21] [cursor=pointer]
+    - button "S" [ref=e23] [cursor=pointer]
+    - button "R" [ref=e25] [cursor=pointer]
+    - button "U" [ref=e27] [cursor=pointer]
+    - button "B" [ref=e29] [cursor=pointer]
+  - generic [ref=e31]:
+    - button "Löschen" [ref=e32] [cursor=pointer]
+    - button "Mischen" [ref=e33] [cursor=pointer]
+    - button "Enter" [ref=e34] [cursor=pointer]
+  - button "Aufgeben" [ref=e35] [cursor=pointer]
+  - region "Gefundene Wörter" [ref=e36]:
+    - generic [ref=e37] [cursor=pointer]: mir
+    - generic [ref=e38] [cursor=pointer]: mist
+    - generic [ref=e39] [cursor=pointer]: mit

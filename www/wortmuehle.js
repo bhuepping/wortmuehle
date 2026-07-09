@@ -329,7 +329,9 @@
       .then(function (d) {
         var wt = (d && d.parse && d.parse.wikitext && d.parse.wikitext['*']) || '';
         wtCache[title] = wt; return wt;
-      }).catch(function () { wtCache[title] = ''; return ''; });
+      });
+      // Kein catch: Netzfehler dürfen nicht als '' in wtCache landen (sonst bleibt das
+      // Wort nach Reconnect bedeutungslos) — fetchDef unterscheidet damit offline/leer.
   }
   function germanSection(wt) {                            // deutscher Sprachabschnitt
     var m = wt && wt.match(/==[^\n]*\(\{\{Sprache\|Deutsch\}\}\)[^\n]*==([\s\S]*?)(?=\n==[^=]|$)/);
@@ -404,7 +406,9 @@
       return { meanings: [] };
     }).then(function (res) {
       defCache[w] = res; return res;
-    }).catch(function () { return { meanings: [] }; });
+    // offline:true statt leerer Bedeutungen — "keine Verbindung" und "Wort hat
+    // keinen Wiktionary-Eintrag" sind für den Nutzer zwei verschiedene Antworten.
+    }).catch(function () { return { offline: true, meanings: [] }; });
   }
   function renderDef(w, res) {
     var html = '<div class="w">' + esc(w.toLowerCase()) + '</div>';
@@ -414,6 +418,8 @@
       show.forEach(function (m) { html += '<div class="bd">' + esc(m) + '</div>'; });
       if (ms.length > show.length)
         html += '<div class="muted">(+' + (ms.length - show.length) + ' weitere)</div>';
+    } else if (res.offline) {
+      html += '<div class="muted">Keine Verbindung — Worterklärungen kommen von de.wiktionary.org.</div>';
     } else {
       html += '<div class="muted">Keine Bedeutung gefunden.</div>';
     }
