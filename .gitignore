@@ -1,0 +1,6 @@
+node_modules/
+*.apk
+
+# Release signing — never commit; back up separately!
+release.keystore
+keystore.properties

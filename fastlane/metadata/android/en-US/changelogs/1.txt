@@ -1,0 +1,1 @@
+Initial release: daily puzzle with pangram guarantee, ~2800 puzzles offline, Scrabble-style scoring, 7-day replay.

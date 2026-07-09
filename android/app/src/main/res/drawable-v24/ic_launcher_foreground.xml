@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+    <!-- Mühlebrett-Gitter: dieselben 3x3-Linien wie das Spielfeld selbst, zentriert im
+         adaptiven Icon-Sicherheitsbereich (66dp-Kreis in der 108dp-Leinwand). -->
+    <path
+        android:pathData="M21,21 L87,21 M21,54 L87,54 M21,87 L87,87 M21,21 L21,87 M54,21 L54,87 M87,21 L87,87"
+        android:strokeColor="#C1622F"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M43,54 A11,11 0 1,0 65,54 A11,11 0 1,0 43,54 Z"
+        android:fillColor="#D98A4F" />
+</vector>

@@ -1,0 +1,17 @@
+{
+  "name": "wortmuehle-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wortmühle — offline-APK (Capacitor-Wrapper um das Vanilla-JS-Webspiel, voller Rätselpool eingebacken)",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6",
+    "@capacitor/core": "^6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6"
+  }
+}

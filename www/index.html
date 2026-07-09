@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#c1622f">
+  <title>Wortmühle</title>
+  <link rel="stylesheet" href="wortmuehle.css">
+</head>
+<body>
+  <main class="game" id="game">
+    <header class="top">
+      <h1>Wortmühle</h1>
+      <div class="datewrap">
+        <button class="datebtn" id="date-btn" aria-haspopup="true" aria-expanded="false" hidden>Heute ▾</button>
+        <div class="datepop" id="date-pop" role="menu" aria-label="Datum wählen" hidden></div>
+      </div>
+    </header>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="current" id="current"><span class="caret"></span></div>
+
+    <div class="hive" id="hive"></div>
+
+    <div class="controls">
+      <button id="del">Löschen</button>
+      <button id="shuffle">Mischen</button>
+      <button id="enter" class="primary">Enter</button>
+    </div>
+
+    <button class="giveup" id="giveup">Aufgeben</button>
+
+    <section class="found" id="found" aria-label="Gefundene Wörter"></section>
+
+    <div class="defpop" id="defpop" hidden></div>
+    <div class="modal" id="confirm" hidden>
+      <div class="card" role="dialog" aria-modal="true">
+        <p id="confirm-msg"></p>
+        <div class="row">
+          <button id="confirm-no">Weiterspielen</button>
+          <button id="confirm-yes" class="primary">Aufgeben</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+    <div class="loading" id="loading">lädt …</div>
+  </main>
+
+  <script>window.POOL_URL = './pool.json';   /* full pool, baked into the APK */
+          window.PUZZLE_URL = './p/';        /* unused offline: every id resolves locally */</script>
+  <script src="wortmuehle.js"></script>
+</body>
+</html>

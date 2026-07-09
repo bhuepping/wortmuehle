@@ -1,0 +1,42 @@
+# Wortmühle
+
+Ein tägliches deutsches Wort-Puzzle für Android — vollständig offline.
+
+Aus neun Buchstaben auf der 3×3-Mühle gilt es, möglichst viele deutsche Wörter
+zu legen. Jedes Wort muss den Mittelbuchstaben enthalten; jedes Rätsel hat
+mindestens ein Pangramm (ein Wort, das alle neun Buchstaben nutzt). Pro Tag
+gibt es ein Rätsel; die letzten sieben Tage lassen sich nachspielen. Punkte
+folgen den Buchstabenwerten des deutschen Scrabble.
+
+Der komplette Rätselpool (~2800 Rätsel) ist in die App eingebaut — sie braucht
+keine Internetverbindung. Einzige Online-Funktion: Worterklärungen von
+de.wiktionary.org (fehlen ohne Netz still).
+
+## Technik
+
+Capacitor-Wrapper (WebView) um ein Vanilla-JS-Webspiel. Kein Tracking, keine
+Werbung, keine Google-Dienste, keine Berechtigungen außer Internet (für die
+Wiktionary-Erklärungen). Details zum Bauen: [BUILD.md](BUILD.md).
+
+## Lizenz
+
+GPL-3.0-only — siehe [LICENSE](LICENSE). Code und Rätseldaten dieses
+Repositories stehen unter der GNU General Public License v3.
+
+## Danksagung / Datenquellen
+
+Der Rätselpool (`www/pool.json`) ist ein aus freien Quellen abgeleitetes Werk:
+
+- **[igerman98 / wngerman](https://www.j3e.de/ispell/igerman98/)** von Björn
+  Jacke — deutsche Wortliste (neue Rechtschreibung), Lizenz GPL-2 oder GPL-3.
+  Hauptquelle der gültigen Lösungswörter.
+- **[de.wiktionary.org](https://de.wiktionary.org/)** — Wortartenprüfung,
+  Beugungsformen und Filterung; außerdem die Laufzeit-Worterklärungen.
+  Inhalte unter [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.de).
+- **[FrequencyWords](https://github.com/hermitdave/FrequencyWords)** von
+  Hermit Dave (Häufigkeitsliste aus dem OpenSubtitles-2018-Korpus) —
+  Auswahl und Schwierigkeitseinstufung der Rätsel. Inhalte unter
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+
+CC BY-SA 4.0 ist einseitig GPL-3-kompatibel; der abgeleitete Pool wird daher
+insgesamt unter GPL-3.0 weitergegeben.

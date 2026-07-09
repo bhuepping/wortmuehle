@@ -1,0 +1,8 @@
+{
+  "appId": "de.huepping.wortmuehle",
+  "appName": "Wortmühle",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

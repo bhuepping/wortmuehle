@@ -1,0 +1,200 @@
+/* Wortmühle — eigenständige Spiel-Seite (unabhängig von der Galerie-style.css).
+   Folgt dem Hell/Dunkel-Modus des Geräts (prefers-color-scheme), Terrakotta/
+   Getreide-Akzent (Mühle-Thema — oxidiertes Mühleisen + Mehl/Korn), touch-/
+   klick-first, responsiv für Desktop & Mobil. */
+
+:root {
+  --bg:     #f7f0e4;
+  --surface:#fffaf3;
+  --text:   #2b2015;
+  --muted:  #8a7860;
+  --border: #e4d5bd;
+  --tile:   #f1e6d3;
+  --tile-edge: #dbc7a3;
+  --accent: #c1622f;   /* Terrakotta / Mühleisen */
+  --accent-ink: #fff3e8;
+  --center: #d98a4f;   /* Getreide-Ton für die Mitte */
+  --center-ink: #3a1c05;
+  --good:   #5c8a52;
+  --good-bg:#e4efdf;   /* sanftes Grün hinter gefundenen Wörtern */
+  --bad:    #b15a4f;   /* gedämpftes Rot für aufgelöste Wörter */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg:     #181511;
+    --surface:#211d17;
+    --text:   #f0e6d6;
+    --muted:  #a89d8a;
+    --border: #3b3122;
+    --tile:   #2b2318;
+    --tile-edge: #40331f;
+    --accent: #d98a4f;
+    --accent-ink: #2a1404;
+    --center: #e0954f;
+    --center-ink: #2a1404;
+    --good:   #7fae70;
+    --good-bg:#26301f;
+    --bad:    #d2897f;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; min-height: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+[hidden] { display: none !important; }
+
+.game {
+  max-width: 480px; margin: 0 auto; padding: 12px 14px 36px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+
+/* ── Kopf ─────────────────────────────────────────────────────────────────── */
+.top { width: 100%; display: flex; align-items: center; gap: 10px; }
+.top h1 { flex: 1; text-align: center; font-size: 1.25rem; margin: 0; letter-spacing: .5px; }
+.back {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 12px; padding: 7px 12px; font-size: .95rem; cursor: pointer;
+  text-decoration: none; line-height: 1;
+}
+.back:active { transform: translateY(1px); }
+
+/* Datum-Auswahl (rechts im Header, hält zugleich den Titel mittig) */
+.datewrap { position: relative; min-width: 38px; display: flex; justify-content: flex-end; }
+.datebtn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 12px; padding: 7px 10px; font-size: .85rem; cursor: pointer;
+  line-height: 1; white-space: nowrap;
+}
+.datebtn:active { transform: translateY(1px); }
+.datepop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 5px; min-width: 150px; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dateopt {
+  border: none; background: none; color: var(--text); text-align: left;
+  padding: 8px 12px; border-radius: 8px; font-size: .9rem; cursor: pointer;
+  font-weight: 700;                      /* fett = im Browser vorhanden (offline spielbar) */
+}
+.dateopt:hover { background: var(--bg); }
+.dateopt.off { color: var(--muted); font-weight: 400; }   /* grau = erst mit Pi-Verbindung da */
+.dateopt.off::after { content: ' ⤓'; font-size: .8em; opacity: .7; }
+.dateopt.sel { background: var(--accent); color: var(--accent-ink); }
+
+/* ── Statistik ────────────────────────────────────────────────────────────── */
+.stats { width: 100%; display: flex; justify-content: space-around; gap: 8px;
+  font-size: .9rem; color: var(--muted); }
+.stats b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── aktuelles Wort ───────────────────────────────────────────────────────── */
+.current {
+  min-height: 2.2rem; font-size: 1.7rem; font-weight: 700; letter-spacing: 3px;
+  display: flex; align-items: center; gap: 2px;   /* Großschreibung macht das JS (ß→ẞ, nicht SS) */
+}
+.current .caret { width: 2px; height: 1.6rem; background: var(--accent);
+  animation: blink 1s steps(2) infinite; }
+.current .miss { color: var(--accent); }   /* Mittelbuchstabe im Tipp-Wort */
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Mühle: 3×3-Raster aus quadratischen Steinen, durch Linien verbunden wie ein
+   Mühlebrett; die Mitte (Pflichtbuchstabe) ist hervorgehoben. "Mischen" lässt die
+   Mühle drehen (millturn). Hintergrund-SVG = das Gitter, das die Steinmitten
+   (16,7 / 50 / 83,3 %) verbindet. ─────────────────────────────────────────── */
+.hive {
+  width: 100%; max-width: 300px; aspect-ratio: 1 / 1; margin: 6px auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+  gap: 11%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg stroke='%23999' stroke-width='2.2' stroke-linecap='round' opacity='0.4'%3E%3Cline x1='16.7' y1='16.7' x2='83.3' y2='16.7'/%3E%3Cline x1='16.7' y1='50' x2='83.3' y2='50'/%3E%3Cline x1='16.7' y1='83.3' x2='83.3' y2='83.3'/%3E%3Cline x1='16.7' y1='16.7' x2='16.7' y2='83.3'/%3E%3Cline x1='50' y1='16.7' x2='50' y2='83.3'/%3E%3Cline x1='83.3' y1='16.7' x2='83.3' y2='83.3'/%3E%3C/g%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+}
+.hive.turning { animation: millturn .55s ease-in-out; }
+@keyframes millturn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.cell {
+  width: 100%; height: 100%; border: none; cursor: pointer;
+  background: var(--tile); color: var(--text); border-radius: 14px;
+  font-size: clamp(1.2rem, 7vw, 1.9rem); font-weight: 800;   /* Großschreibung macht das JS (ß→ẞ) */
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 -4px 0 var(--tile-edge);
+  transition: transform .06s, opacity .12s;
+}
+.cell > span { display: block; }
+.cell:active { transform: scale(.92); }
+.cell.center, .cell.center:active {
+  background: var(--center); color: var(--center-ink);
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,.18);
+}
+.cell.used { opacity: .3; pointer-events: none; box-shadow: none; }   /* benutzter Stein gesperrt */
+
+/* ── Steuerung ────────────────────────────────────────────────────────────── */
+.controls { display: flex; gap: 8px; width: 100%; max-width: 320px; }
+.controls button {
+  flex: 1; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 14px; padding: 12px 0; font-size: 1rem; cursor: pointer;
+}
+.controls button:active { transform: translateY(1px); }
+.controls .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+
+.giveup { background: none; border: none; color: var(--muted); font-size: .85rem;
+  cursor: pointer; text-decoration: underline; }
+
+/* ── Wortliste: grün = selbst gefunden, gedämpft rot = nach Aufgeben aufgelöst ── */
+.found { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.found span { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px 8px; font-size: .9rem; cursor: pointer; }
+.found span.got  { color: var(--good); border-color: var(--good); background: var(--good-bg); }
+.found span.miss { color: var(--bad);  border-color: var(--bad); }
+.found span.pan  { font-weight: 700; }
+
+/* ── Worterklärung (Popover) ──────────────────────────────────────────────── */
+.defpop {
+  position: absolute; z-index: 20; max-width: min(300px, 92vw);
+  max-height: min(50vh, 360px); overflow-y: auto;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; box-shadow: 0 8px 28px rgba(0,0,0,.28);
+  font-size: .85rem; line-height: 1.35;
+}
+.defpop .w { font-weight: 700; margin-bottom: 3px; }
+.defpop .deriv { color: var(--muted); font-style: italic; margin-bottom: 4px; }
+.defpop .bd { margin: 2px 0; }
+.defpop .muted { color: var(--muted); }
+.defpop a { display: inline-block; margin-top: 6px; color: var(--accent); text-decoration: none; font-size: .8rem; }
+
+/* ── Bestätigungs-Dialog ──────────────────────────────────────────────────── */
+.modal {
+  position: fixed; inset: 0; z-index: 20; padding: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .45);
+}
+.modal .card {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+  width: 100%; max-width: 320px; box-shadow: 0 14px 44px rgba(0, 0, 0, .3);
+}
+.modal .card p { margin: 0 0 16px; font-size: 1rem; }
+.modal .row { display: flex; gap: 10px; }
+.modal .row button {
+  flex: 1; padding: 11px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: .95rem;
+}
+.modal .row button.primary {
+  background: var(--accent); color: var(--accent-ink);
+  border-color: var(--accent); font-weight: 700;
+}
+
+/* ── Toast / laden ────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px;
+  font-size: .95rem; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 9;
+}
+.toast.good { background: var(--good); color: #fff; }
+.loading { color: var(--muted); margin-top: 30px; }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Wortmühle</string>
+    <string name="title_activity_main">Wortmühle</string>
+    <string name="package_name">de.huepping.wortmuehle</string>
+    <string name="custom_url_scheme">de.huepping.wortmuehle</string>
+</resources>
