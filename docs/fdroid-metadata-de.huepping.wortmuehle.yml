@@ -1,0 +1,43 @@
+# Entwurf für fdroiddata: metadata/de.huepping.wortmuehle.yml
+# Einreichen als Merge Request auf https://gitlab.com/fdroid/fdroiddata
+# (Datei dort OHNE diesen Kommentarkopf ablegen; vorher `fdroid lint` laufen lassen)
+
+Categories:
+  - Games
+License: GPL-3.0-only
+AuthorName: Björn Hüpping
+SourceCode: https://github.com/bhuepping/wortmuehle
+IssueTracker: https://github.com/bhuepping/wortmuehle/issues
+
+AutoName: Wortmühle
+Summary: Tägliches deutsches Wort-Puzzle — 9 Buchstaben, ein Pangramm, ganz offline
+Description: |-
+  Wortmühle ist ein tägliches Wort-Puzzle: Aus neun Buchstaben auf der
+  3×3-Mühle legst du möglichst viele deutsche Wörter. Jedes Wort muss den
+  Mittelbuchstaben enthalten, und in jedem Rätsel steckt mindestens ein
+  Pangramm — ein Wort, das alle neun Buchstaben verwendet.
+
+  Der komplette Rätselpool (~2800 Rätsel) ist eingebaut — die App läuft
+  vollständig offline. Einzige Online-Funktion: Worterklärungen von
+  de.wiktionary.org.
+
+RepoType: git
+Repo: https://github.com/bhuepping/wortmuehle.git
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0
+    subdir: android/app
+    sudo:
+      - apt-get update
+      - apt-get install -y --no-install-recommends npm
+    init:
+      - cd ../.. && npm ci && npx cap sync android
+    gradle:
+      - yes
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1
