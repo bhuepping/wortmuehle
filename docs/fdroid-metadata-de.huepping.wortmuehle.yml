@@ -1,6 +1,7 @@
 # Spiegel des fdroiddata-Rezepts: metadata/de.huepping.wortmuehle.yml
 # Eingereicht als MR https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42900
-# Stand: Review-Fixes vom 2026-07-15 (Commit 1cbd6f419 im MR).
+# Stand: 1.1-Update vom 2026-07-16 (Commit 527c3c44c im MR) — Worterklärungen
+# jetzt Opt-in (F-Droid-Review: sonst TetheredNet-Anti-Feature).
 # Kein Summary/Description hier: die kommen aus fastlane/ im App-Repo
 # (fdroiddata-MR-Template: "Do not add summary and description in fdroiddata").
 # Review-Erkenntnisse (linsui):
@@ -22,9 +23,9 @@ RepoType: git
 Repo: https://github.com/bhuepping/wortmuehle.git
 
 Builds:
-  - versionName: '1.0'
-    versionCode: 1
-    commit: 86c317819032b7fcb4760bc1f4b5798eed1f1f62
+  - versionName: '1.1'
+    versionCode: 2
+    commit: 90d12b06577b4038e92d4ed5eb4b5da227400188
     subdir: android/app
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
@@ -41,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '1.0'
-CurrentVersionCode: 1
+CurrentVersion: '1.1'
+CurrentVersionCode: 2
