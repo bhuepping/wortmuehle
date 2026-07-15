@@ -5,9 +5,10 @@ Features:
 • One new puzzle every day, with the last seven days replayable
 • ~2800 puzzles built in — works fully offline
 • Scoring based on German Scrabble letter values, with a pangram bonus
-• Tap a found word for its definition (from de.wiktionary.org — the only online feature)
+• Optional: tap a found word for its definition (from de.wiktionary.org — the only online feature, off by default)
+• Light/dark mode selectable (follows the system otherwise)
 • No tracking, no ads, no accounts, no Google services
 
-The INTERNET permission exists solely for these Wiktionary lookups. Without a connection the app says so in place of the definition; the game itself works fully offline.
+The INTERNET permission exists solely for these Wiktionary lookups, and they are opt-in: unless you enable word definitions in the settings, the app never touches the network. Without a connection it says so in place of the definition; the game itself works fully offline.
 
 Note: the game and its vocabulary are entirely in German. The word list is derived from free sources (igerman98 word list, de.wiktionary, OpenSubtitles frequency data).

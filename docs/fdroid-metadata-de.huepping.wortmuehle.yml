@@ -1,11 +1,16 @@
-# Entwurf für fdroiddata: metadata/de.huepping.wortmuehle.yml
-# Einreichen als Merge Request auf https://gitlab.com/fdroid/fdroiddata
-# (Datei dort OHNE diesen Kommentarkopf ablegen; vorher `fdroid lint` laufen lassen)
+# Spiegel des fdroiddata-Rezepts: metadata/de.huepping.wortmuehle.yml
+# Eingereicht als MR https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42900
+# Stand: Review-Fixes vom 2026-07-15 (Commit 1cbd6f419 im MR).
 # Kein Summary/Description hier: die kommen aus fastlane/ im App-Repo
 # (fdroiddata-MR-Template: "Do not add summary and description in fdroiddata").
+# Review-Erkenntnisse (linsui):
+#   - commit: immer voller Git-Hash, nie Tag/Branch (Tags sind verschiebbar)
+#   - Categories: neue feingranulare Kategorien (config/categories.yml), "Games" ist ungültig
+#   - AutoUpdateMode: nur noch "Version" (das alte "Version v%v" fällt durchs Schema)
+# Künftige Versionen trägt der checkupdates-Bot selbst nach (UpdateCheckMode: Tags).
 
 Categories:
-  - Games
+  - Word Game
 License: GPL-3.0-only
 AuthorName: Björn Hüpping
 SourceCode: https://github.com/bhuepping/wortmuehle
@@ -19,7 +24,7 @@ Repo: https://github.com/bhuepping/wortmuehle.git
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: v1.0
+    commit: 86c317819032b7fcb4760bc1f4b5798eed1f1f62
     subdir: android/app
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
@@ -34,7 +39,7 @@ Builds:
     scandelete:
       - node_modules/
 
-AutoUpdateMode: Version v%v
+AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: '1.0'
 CurrentVersionCode: 1

@@ -48,7 +48,9 @@
   </main>
 
   <script>window.POOL_URL = './pool.json';   /* full pool, baked into the APK */
-          window.PUZZLE_URL = './p/';        /* unused offline: every id resolves locally */</script>
+          window.PUZZLE_URL = './p/';        /* unused offline: every id resolves locally */
+          window.LOOKUP_DEFAULT = false;     /* word lookup (de.wiktionary) is opt-in in the app:
+                                                no network at all until enabled in the settings */</script>
   <script src="wortmuehle.js"></script>
 </body>
 </html>

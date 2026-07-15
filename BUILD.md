@@ -2,8 +2,10 @@
 
 Capacitor-Wrapper um das Vanilla-JS-Webspiel aus `piGallery`. **Der komplette
 Rätselpool (~2800 Rätsel) ist eingebacken** → läuft vollständig offline, kein Pi nötig.
-Einzige Online-Funktion: die Worterklärungen von de.wiktionary (ohne Netz erscheint
-an ihrer Stelle ein Hinweis, das Spiel läuft unverändert).
+Einzige Online-Funktion: die Worterklärungen von de.wiktionary — in der App
+Opt-in (`window.LOOKUP_DEFAULT = false` in `www/index.html`, standardmäßig aus;
+eingeschaltet erscheint ohne Netz an ihrer Stelle ein Hinweis, das Spiel läuft
+unverändert).
 
 ## Aufbau
 - `www/` — die Web-App (Quelle für den APK)
@@ -38,7 +40,9 @@ cd android
 ## Release bauen (signiert)
 `keystore.properties` + `release.keystore` liegen im Repo-Root und sind **nicht
 eingecheckt** (.gitignore) — **beide sichern**, der Keystore ist die dauerhafte
-Identität der App (gleicher Key für F-Droid-Repo, Play Store, Sideload-Updates).
+Identität der App für Play Store und Sideload-Updates. **F-Droid signiert mit
+eigenem Key** (Reproducible Builds bewusst nicht aktiviert) — F-Droid-Installationen
+lassen sich daher nicht mit unseren APKs cross-updaten und umgekehrt.
 Fehlt die Datei (frischer Checkout, F-Droid-Buildserver), baut Gradle ein
 unsigniertes Release.
 ```sh

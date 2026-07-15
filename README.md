@@ -10,14 +10,18 @@ folgen den Buchstabenwerten des deutschen Scrabble.
 
 Der komplette Rätselpool (~2800 Rätsel) ist in die App eingebaut — sie braucht
 keine Internetverbindung. Einzige Online-Funktion: Worterklärungen von
-de.wiktionary.org (ohne Netz erscheint an ihrer Stelle ein Hinweis).
+de.wiktionary.org, als Opt-in — standardmäßig aus und erst nach dem
+Einschalten in den Einstellungen aktiv (ohne Netz erscheint an ihrer Stelle
+ein Hinweis).
 
 ## Technik
 
 Capacitor-Wrapper (WebView) um ein Vanilla-JS-Webspiel. Kein Tracking, keine
 Werbung, keine Google-Dienste. Einzige Berechtigung ist INTERNET, und die
-dient ausschließlich den Wiktionary-Worterklärungen — ohne Netz zeigt die
-App an der Stelle „Keine Verbindung — Worterklärungen kommen von
+dient ausschließlich den Wiktionary-Worterklärungen. Die sind Opt-in
+(standardmäßig aus): Solange sie nicht in den Einstellungen eingeschaltet
+sind, macht die App keinerlei Netzwerkzugriffe. Eingeschaltet und ohne Netz
+zeigt sie an der Stelle „Keine Verbindung — Worterklärungen kommen von
 de.wiktionary.org", alles andere funktioniert unverändert.
 Details zum Bauen: [BUILD.md](BUILD.md).
 

@@ -547,6 +547,11 @@ def mart(con):
     for (surface,) in con.execute("SELECT surface FROM stg_freq WHERE rank < ?", (TOPN,)):
         if len(surface) == TILES and set(surface) <= ALLOWED and surface in wn_lower:
             seeds.setdefault("".join(sorted(surface)), surface)
+    # whitelisted 9-letter words seed a puzzle too — "Gewinnt immer" (extra_words.txt)
+    # also means: no frequency rank or wngerman entry required to carry a rack
+    for (lf,) in con.execute("SELECT lower_form FROM stg_manual WHERE action='include'"):
+        if len(lf) == TILES and set(lf) <= ALLOWED:
+            seeds.setdefault("".join(sorted(lf)), lf)
     print(f"· mart: dict={len(sols)} seeds={len(seeds)}")
 
     puzzles = []

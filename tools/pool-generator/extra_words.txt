@@ -1,3 +1,4 @@
 # Zusatz-Wörter (Whitelist) für Wortmühle, die das Wörterbuch nicht führt.
 # Eine Zeile pro Wort, in korrekter Schreibweise (Substantive groß). Gewinnt immer.
 # Zeilen mit # werden ignoriert. Wird von build_db.py (stg_manual) einbezogen.
+Wortmühle

@@ -39,6 +39,44 @@
   }
 }
 
+/* Manuelle Wahl aus den Einstellungen (data-theme aufs <html>) schlägt
+   prefers-color-scheme. Werte = Kopien der beiden Blöcke oben — bei
+   Farbänderungen alle vier Stellen pflegen. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:     #f7f0e4;
+  --surface:#fffaf3;
+  --text:   #2b2015;
+  --muted:  #8a7860;
+  --border: #e4d5bd;
+  --tile:   #f1e6d3;
+  --tile-edge: #dbc7a3;
+  --accent: #c1622f;
+  --accent-ink: #fff3e8;
+  --center: #d98a4f;
+  --center-ink: #3a1c05;
+  --good:   #5c8a52;
+  --good-bg:#e4efdf;
+  --bad:    #b15a4f;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:     #181511;
+  --surface:#211d17;
+  --text:   #f0e6d6;
+  --muted:  #a89d8a;
+  --border: #3b3122;
+  --tile:   #2b2318;
+  --tile-edge: #40331f;
+  --accent: #d98a4f;
+  --accent-ink: #2a1404;
+  --center: #e0954f;
+  --center-ink: #2a1404;
+  --good:   #7fae70;
+  --good-bg:#26301f;
+  --bad:    #d2897f;
+}
+
 * { box-sizing: border-box; }
 html, body {
   margin: 0; min-height: 100%;
@@ -65,7 +103,12 @@ html, body {
 .back:active { transform: translateY(1px); }
 
 /* Datum-Auswahl (rechts im Header, hält zugleich den Titel mittig) */
-.datewrap { position: relative; min-width: 38px; display: flex; justify-content: flex-end; }
+.datewrap { position: relative; min-width: 38px; display: flex; justify-content: flex-end; gap: 6px; }
+.gearbtn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 12px; padding: 7px 9px; font-size: .85rem; cursor: pointer; line-height: 1;
+}
+.gearbtn:active { transform: translateY(1px); }
 .datebtn {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   border-radius: 12px; padding: 7px 10px; font-size: .85rem; cursor: pointer;
@@ -149,6 +192,7 @@ html, body {
 .found { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
 .found span { background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; padding: 3px 8px; font-size: .9rem; cursor: pointer; }
+.found.nolookup span { cursor: default; }   /* Worterklärungen aus → nichts ist antippbar */
 .found span.got  { color: var(--good); border-color: var(--good); background: var(--good-bg); }
 .found span.miss { color: var(--bad);  border-color: var(--bad); }
 .found span.pan  { font-weight: 700; }
@@ -189,6 +233,21 @@ html, body {
   background: var(--accent); color: var(--accent-ink);
   border-color: var(--accent); font-weight: 700;
 }
+
+/* ── Einstellungen (Dialog nutzt .modal/.card) ────────────────────────────── */
+.modal .card h2 { margin: 0 0 14px; font-size: 1.05rem; }
+.setting { margin: 0 0 16px; }
+.setting .lbl { font-size: .9rem; margin-bottom: 6px; }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.seg button {
+  flex: 1; border: none; background: var(--surface); color: var(--text);
+  padding: 9px 0; font-size: .9rem; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button.sel { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.switch { display: flex; align-items: center; gap: 8px; font-size: .95rem; cursor: pointer; }
+.switch input { width: 19px; height: 19px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.hint { color: var(--muted); font-size: .8rem; margin-top: 6px; line-height: 1.35; }
 
 /* ── Toast / laden ────────────────────────────────────────────────────────── */
 .toast {

@@ -42,6 +42,29 @@
   var prog = {}, today = '';
   var HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+  // ── Einstellungen (Darstellung + Worterklärungen) ───────────────────────────
+  // Web: Nachschlagen standardmäßig an (bisheriges Verhalten). Die App setzt
+  // window.LOOKUP_DEFAULT = false → Opt-in, ohne Zustimmung geht nichts ins Netz
+  // (F-Droid: INTERNET nur für abschaltbare Zusatzfunktion, kein Anti-Feature).
+  var SETTINGS_KEY = 'wortmuehle.settings';
+  var LOOKUP_DEFAULT = window.LOOKUP_DEFAULT !== false;
+  var settings = { theme: 'system', lookup: LOOKUP_DEFAULT };
+  try {
+    var st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+    if (st) {
+      if (st.theme === 'light' || st.theme === 'dark') settings.theme = st.theme;
+      if (typeof st.lookup === 'boolean') settings.lookup = st.lookup;
+    }
+  } catch (e) {}
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+  }
+  function applyTheme() {                                 // 'system' = Attribut weg → prefers-color-scheme
+    if (settings.theme === 'system') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = settings.theme;
+  }
+  applyTheme();
+
   var $ = function (id) { return document.getElementById(id); };
   var hive = $('hive'), current = $('current'), statsEl = $('stats'),
       foundEl = $('found'), toastEl = $('toast'), defpop = $('defpop');
@@ -212,16 +235,19 @@
     var words = (ended ? puzzle.words.slice() : Array.from(found))
                   .sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
     foundEl.innerHTML = '';
+    foundEl.classList.toggle('nolookup', !settings.lookup);
     words.forEach(function (w) {
       var s = document.createElement('span');
       // Nur die Anzeige ist klein — w bleibt original-cased (Wiktionary-Lookup/Link
       // brauchen die echte Groß-/Kleinschreibung, s. showDef/renderDef unten).
       s.textContent = w.toLowerCase();
       s.className = (found.has(w) ? 'got' : 'miss') + (w.length === 9 ? ' pan' : '');
-      s.addEventListener('click', function (e) { e.stopPropagation(); toggleDef(w, s); });
-      if (HOVER) {
-        s.addEventListener('mouseenter', function () { if (!defpop.dataset.pin) showDef(w, s, false); });
-        s.addEventListener('mouseleave', function () { if (!defpop.dataset.pin) hideDef(); });
+      if (settings.lookup) {                              // aus = Wörter reagieren gar nicht (kein Netz)
+        s.addEventListener('click', function (e) { e.stopPropagation(); toggleDef(w, s); });
+        if (HOVER) {
+          s.addEventListener('mouseenter', function () { if (!defpop.dataset.pin) showDef(w, s, false); });
+          s.addEventListener('mouseleave', function () { if (!defpop.dataset.pin) hideDef(); });
+        }
       }
       foundEl.appendChild(s);
     });
@@ -497,4 +523,67 @@
   document.addEventListener('click', function (e) {
     if (!defpop.contains(e.target)) hideDef(true);
   });
+
+  // ── Einstellungen-Dialog (Zahnrad im Kopf) ──────────────────────────────────
+  // Markup komplett per JS: Web-Template und App-index.html teilen sich so eine
+  // Quelle und können nicht auseinanderlaufen.
+  (function () {
+    var wrap = $('date-btn').parentNode;                  // .datewrap, rechts im Kopf
+    var gear = document.createElement('button');
+    gear.className = 'gearbtn';
+    gear.setAttribute('aria-label', 'Einstellungen');
+    gear.setAttribute('aria-haspopup', 'dialog');
+    gear.textContent = '⚙';
+    wrap.insertBefore(gear, wrap.firstChild);
+
+    var modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="card" role="dialog" aria-modal="true" aria-label="Einstellungen">' +
+        '<h2>Einstellungen</h2>' +
+        '<div class="setting"><div class="lbl">Darstellung</div>' +
+          '<div class="seg" id="theme-seg">' +
+            '<button data-theme="system">System</button>' +
+            '<button data-theme="light">Hell</button>' +
+            '<button data-theme="dark">Dunkel</button>' +
+          '</div></div>' +
+        '<div class="setting">' +
+          '<label class="switch"><input type="checkbox" id="lookup-toggle">' +
+            '<span>Worterklärungen</span></label>' +
+          '<div class="hint">Schlägt angetippte Wörter der Lösungsliste online bei ' +
+            'de.wiktionary.org nach. Ausgeschaltet reagieren die Wörter nicht aufs Antippen.</div>' +
+        '</div>' +
+        '<div class="row"><button id="settings-close" class="primary">Fertig</button></div>' +
+      '</div>';
+    document.body.appendChild(modal);
+
+    var seg = modal.querySelector('#theme-seg');
+    var lk = modal.querySelector('#lookup-toggle');
+    function renderSeg() {
+      Array.prototype.forEach.call(seg.children, function (b) {
+        b.classList.toggle('sel', b.dataset.theme === settings.theme);
+      });
+    }
+    gear.addEventListener('click', function () {
+      renderSeg();
+      lk.checked = settings.lookup;
+      modal.hidden = false;
+    });
+    seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      settings.theme = b.dataset.theme;
+      saveSettings(); applyTheme(); renderSeg();
+    });
+    lk.addEventListener('change', function () {
+      settings.lookup = lk.checked;
+      saveSettings();
+      hideDef(true);                                      // offenes Popover schließen
+      if (puzzle) renderFound();                          // Wortlisten-Handler sofort an/aus
+    });
+    function close() { modal.hidden = true; }
+    modal.querySelector('#settings-close').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  })();
 })();

@@ -1,0 +1,1 @@
+New settings (gear icon): system/light/dark theme and word definitions. The online lookup via de.wiktionary.org is now opt-in and off by default — the app never touches the network unless you enable it.

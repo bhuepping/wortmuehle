@@ -1,0 +1,1 @@
+Neue Einstellungen (Zahnrad): Darstellung System/Hell/Dunkel und Worterklärungen. Das Online-Nachschlagen bei de.wiktionary.org ist jetzt Opt-in und standardmäßig aus — ohne Einwilligung geht die App nie ins Netz.
