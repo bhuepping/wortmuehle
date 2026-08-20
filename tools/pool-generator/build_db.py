@@ -17,6 +17,7 @@ Sources:
   * de_50k.txt          OpenSubtitles frequency (seeds + difficulty; mart stage)
   * extra_words.txt     manual include list   (staged into stg_manual)
   * blacklist.txt       manual exclude list   (staged into stg_manual)
+  * ../piGallery/data/wortmuehle_tabu.txt   unerwünschte, aber gültige Wörter (mart stage)
 
 Once the staging tables are populated, iterating on acceptance rules is pure SQL in
 milliseconds — no 253 MB re-parse. The shipped puzzle pool (JSON) is produced by a
@@ -29,6 +30,7 @@ Usage:
     python3 build_db.py decide         # rebuild word_decision (cheap, re-run freely)
     python3 build_db.py why <word>     # explain a word's lineage + verdict
     python3 build_db.py report         # counts per source / reason
+    python3 build_db.py prune          # Tabuliste erneut auf den fertigen Pool anwenden
 """
 import os, re, sys, bz2, sqlite3, subprocess, glob, json, time, hashlib
 from collections import Counter
@@ -37,6 +39,7 @@ BASE  = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(BASE, ".cache")
 DB    = os.path.join(CACHE, "wortmuehle.db")
 OUT   = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_pool.json"))
+TABU  = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_tabu.txt"))
 
 MIN_LEN = 3
 TILES   = 9                       # max surface length we care about for the game
@@ -532,8 +535,44 @@ def decide(con):
     print(f"· word_decision: {acc} accepted surfaces → {play} playable lower-forms")
 
 
+# ── Tabuliste ───────────────────────────────────────────────────────────────
+def load_tabu(path=TABU):
+    """Gültige, aber unerwünschte Wörter (wortmuehle_tabu.txt).
+
+    Sie bleiben im Lexikon — wer sie tippt, bekommt Punkte. Gefiltert wird auf
+    Rätsel-Ebene: taucht so ein Wort in einer Lösungsliste auf, fällt das ganze
+    Rätsel aus dem Pool. Damit ist es nie legal bildbar und nichts wirkt zensiert.
+    Zeilen mit "*" am Ende sind Präfixe (fick* = fick, ficken, fickt …).
+    """
+    exact, prefixes = set(), []
+    if os.path.exists(path):
+        for line in open(path, encoding="utf-8"):
+            x = line.strip().lower()
+            if not x or x.startswith("#"):
+                continue
+            (prefixes.append(x[:-1]) if x.endswith("*") else exact.add(x))
+    return exact, tuple(prefixes)
+
+
+def tabu_hits(words, tabu):
+    """Die Tabu-Treffer in einer Lösungsliste (leer = Rätsel ist sauber)."""
+    exact, prefixes = tabu
+    return sorted({w for w in words
+                   if w.lower() in exact or (prefixes and w.lower().startswith(prefixes))})
+
+
+def tabu_report(dropped, total):
+    if not dropped:
+        print("· tabu: kein Rätsel betroffen"); return
+    n = sum(dropped.values())
+    print(f"· tabu: {n}/{total} Rätsel entfernt ({100*n/total:.1f} %), Auslöser:")
+    for w, c in sorted(dropped.items(), key=lambda kv: -kv[1]):
+        print(f"    {c:4d}  {w}")
+
+
 # ── MART (puzzles + JSON export, reads the accepted dictionary) ──────────────
 def mart(con):
+    tabu, tabu_dropped = load_tabu(), Counter()
     # accepted play dictionary: one entry per lower_form with its display spelling
     sols = []
     for lf, canon in con.execute("""SELECT DISTINCT w.lower_form, w.canonical
@@ -576,11 +615,17 @@ def mart(con):
         pangrams = [w for w in words if len(w) == TILES]
         if not pangrams:      # Namensfilter/Blacklist kann das Seed-Wort entfernt haben
             continue          # → Rätsel ohne findbares Pangramm nie ausliefern
+        hits = tabu_hits(words, tabu)
+        if hits:              # unerwünschtes Wort in der Lösungsliste → Rätsel fällt ganz weg
+            tabu_dropped[hits[0]] += 1
+            continue
         puzzles.append({
             "sig": sig, "tiles": sorted(seed), "center": center, "words": words,
             "pangrams": pangrams,
             "maxScore": sum(word_score(w) for w in words),
         })
+
+    tabu_report(tabu_dropped, sum(tabu_dropped.values()) + len(puzzles))
 
     for p in puzzles:
         p["id"] = hashlib.sha1((p["sig"] + p["center"]).encode()).hexdigest()[:8]
@@ -622,6 +667,31 @@ def mart(con):
     print(f"· wrote {OUT}")
     print(f"  pool={n}  median_words={med}  umlaut_racks={uml}  size={size/1024:.0f} KiB  "
           f"(full pool; server windows per request)")
+
+
+def prune(path=OUT):
+    """Tabuliste auf den fertigen Pool anwenden — ohne DB, für schnelles Nachziehen.
+
+    Entfernt genau die Rätsel, die auch die mart-Stufe verworfen hätte; der Rest bleibt
+    Byte für Byte gleich. Nach dem Ausdünnen verschiebt sich die Tagesrotation
+    (`dayNum % len`) — Server und APK müssen denselben Pool bekommen.
+    """
+    tabu = load_tabu()
+    with open(path, encoding="utf-8") as f:
+        pool = json.load(f)
+    keep, dropped = [], Counter()
+    for p in pool["puzzles"]:
+        hits = tabu_hits(p["words"], tabu)
+        if hits:
+            dropped[hits[0]] += 1
+        else:
+            keep.append(p)
+    tabu_report(dropped, len(pool["puzzles"]))
+    pool["puzzles"] = keep
+    pool["meta"]["count"] = pool["meta"]["poolSize"] = len(keep)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(pool, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"· {path}: {len(keep)} Rätsel")
 
 
 # ── audit ───────────────────────────────────────────────────────────────────
@@ -680,6 +750,8 @@ def main():
         decide(con)
     elif cmd == "mart":
         mart(con)
+    elif cmd == "prune":
+        prune()
     elif cmd == "why":
         why(con, args[1])
     elif cmd == "report":

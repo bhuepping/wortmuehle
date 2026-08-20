@@ -1,0 +1,86 @@
+# Wortmühle — unerwünschte Wörter (gültig, aber nicht zeigbar).
+#
+# Diese Wörter werden NICHT aus dem Lexikon gestrichen. Stattdessen fällt jedes
+# Rätsel, in dessen Lösungsliste eines davon vorkommt, komplett aus dem Pool.
+# Ein Tabuwort ist damit nie legal bildbar — und nichts wirkt wegzensiert.
+#
+# Eine Zeile pro Eintrag, kleingeschrieben. "#" = Kommentar.
+# Endet die Zeile auf "*", zählt sie als Präfix (fick* = fick, ficken, fickt …).
+# Abschnitte lassen sich am Stück löschen, wenn sie zu viele Rätsel kosten.
+
+# ── Rassistische Bezeichnungen ──────────────────────────────────────────────
+neger*
+nigger*
+zigeuner*
+kanake*
+kaffer*
+mohr
+mohren
+mohrin
+bimbo*
+itaker*
+polacke*
+polack
+mischling*
+rothaut
+rothäute
+schlitzauge*
+untermensch*
+judensau
+entjud*
+
+# ── Sexuelles / Prostitution ────────────────────────────────────────────────
+hure*
+rumhur*
+nutt*
+fotze*
+möse*
+muschi*
+schlampe*
+flittchen
+zuhälter*
+bordell*
+callgirl*
+porno*
+fick*
+wichs*
+onanie*
+onanier*
+sperma*
+ejakul*
+orgasmus
+orgasmen
+koitus
+inzest*
+pädophil*
+vergewaltig*
+klitoris
+
+# ── Beleidigungen (Behinderung, Herkunft, Identität) ────────────────────────
+spast*
+mongo
+mongos
+mongoloid
+krüppel*
+schwuchtel*
+tunte
+tunten
+transe
+transen
+
+# ── Fäkal / derb ────────────────────────────────────────────────────────────
+arsch*
+scheiß*
+scheiss*
+kack*
+piss*
+titte*
+
+# ── Anatomie (mild — kann raus, falls zu teuer) ─────────────────────────────
+penis*
+vagina*
+vulva
+hoden*
+schamlippe*
+dirne
+dirnen
