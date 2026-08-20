@@ -258,3 +258,48 @@ kurt
 take
 till
 tim
+
+# 2026-08-20: Eigennamen/Marken aus der Stichprobe nomean-1000, die weder
+# Wiktionary noch die Vornamensliste als Namen kennt (sie kommen aus wngerman).
+# Bewusst NICHT gesperrt: fedora (Hut), halls (Genitiv von Hall), raudi.
+# commodore raus trotz Dienstgrad — 9 Buchstaben, also potenzielles Pangramm.
+anwars
+araldit
+arals
+beethoven
+blair
+commodore
+dalai
+dali
+dalis
+dow
+dubcek
+edekas
+egers
+haag
+hamed
+hermes
+ios
+junos
+knaur
+knox
+konfuzius
+lennons
+lindbergh
+lippes
+mao
+mayflower
+mcdonalds
+mick
+ming
+mings
+mussolini
+novells
+richelieu
+robinsons
+sadats
+starbucks
+sun
+trafalgar
+westlb
+wiens
