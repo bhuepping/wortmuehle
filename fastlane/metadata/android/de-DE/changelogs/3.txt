@@ -1,0 +1,3 @@
+Die App fordert jetzt gar keine Berechtigung mehr — auch die Netzberechtigung ist weg. Die Worterklärungen sind eingebaut und funktionieren offline; wer mehr lesen will, tippt auf den Wiktionary-Link und landet im Browser.
+
+Der Rätselpool wurde überarbeitet: unerwünschte Lösungswörter sind raus, ebenso Eigennamen und fehlerhaft erzeugte Wortformen. Dadurch verschieben sich die Tagesrätsel einmalig — ein Rätsel, das du heute schon gelöst hast, kann nach dem Update neu sein.

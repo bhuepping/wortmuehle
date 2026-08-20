@@ -3,12 +3,12 @@ Wortmühle ist ein tägliches Wort-Puzzle: Aus neun Buchstaben auf der 3×3-Müh
 Merkmale:
 
 • Jeden Tag ein neues Rätsel, die letzten sieben Tage lassen sich nachspielen
-• ~2800 Rätsel fest eingebaut — läuft vollständig offline
+• ~2700 Rätsel fest eingebaut — läuft vollständig offline
 • Punktewertung nach den Buchstabenwerten des deutschen Scrabble, Pangramm-Bonus
-• Optional: Worterklärungen per Antippen (von de.wiktionary.org — einzige Online-Funktion, standardmäßig aus)
+• Worterklärungen per Antippen — eingebaut, ohne Netz
 • Hell/Dunkel-Modus wählbar (folgt sonst dem System)
-• Kein Tracking, keine Werbung, keine Konten, keine Google-Dienste
+• Keine Berechtigungen, kein Tracking, keine Werbung, keine Konten, keine Google-Dienste
 
-Die INTERNET-Berechtigung dient ausschließlich diesen Wiktionary-Abfragen, und die sind Opt-in: Solange du die Worterklärungen nicht in den Einstellungen einschaltest, geht die App nie ins Netz. Ohne Verbindung weist sie darauf hin; das Spiel selbst funktioniert vollständig offline.
+Die App fordert keine einzige Berechtigung an und greift zu keinem Zeitpunkt auf das Netz zu. Auch die Worterklärungen sind mitgeliefert: Sie stammen aus de.wiktionary.org, stehen unter CC BY-SA 4.0 und sind auf die ersten beiden Bedeutungen gekürzt. Unter jeder Erklärung steht ein Link zur zugehörigen Wiktionary-Seite — der öffnet, wenn du ihn antippst, deinen Browser.
 
 Der Wortschatz basiert auf freien Quellen (igerman98-Wortliste, de.wiktionary, OpenSubtitles-Häufigkeitsliste).

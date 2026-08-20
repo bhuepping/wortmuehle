@@ -1,0 +1,3 @@
+The app now requests no permissions at all — the network permission is gone too. Word definitions ship inside the app and work offline; tap the Wiktionary link to read more in your browser.
+
+The puzzle pool was revised: unwanted solution words are gone, along with proper names and incorrectly generated word forms. As a result the daily puzzles shift once — a puzzle you already solved today may be a new one after the update.

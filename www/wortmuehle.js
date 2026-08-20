@@ -8,7 +8,8 @@
  * Tagesrätsel: pro Tag genau ein festes Rätsel, deterministisch aus dem Datum gewählt
  * (stabil über Wort-Updates). Eingabe per Antippen der Steine (benutzte Steine werden
  * gesperrt, bis man sie per Löschen freigibt); "Mischen" lässt die Mühle drehen.
- * Fortschritt in localStorage. Worterklärungen live von de.wiktionary. */
+ * Fortschritt in localStorage. Worterklärungen aus dem mitgelieferten Paket
+ * (window.WM_DEFS, aus de.wiktionary abgeleitet) — kein Netzzugriff. */
 (function () {
   'use strict';
 
@@ -42,18 +43,15 @@
   var prog = {}, today = '';
   var HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  // ── Einstellungen (Darstellung + Worterklärungen) ───────────────────────────
-  // Web: Nachschlagen standardmäßig an (bisheriges Verhalten). Die App setzt
-  // window.LOOKUP_DEFAULT = false → Opt-in, ohne Zustimmung geht nichts ins Netz
-  // (F-Droid: INTERNET nur für abschaltbare Zusatzfunktion, kein Anti-Feature).
+  // ── Einstellungen (Darstellung) ─────────────────────────────────────────────
+  // Worterklärungen brauchen keinen Schalter mehr: sie liegen als Paket bei
+  // (window.WM_DEFS) und kosten weder Netz noch Zustimmung.
   var SETTINGS_KEY = 'wortmuehle.settings';
-  var LOOKUP_DEFAULT = window.LOOKUP_DEFAULT !== false;
-  var settings = { theme: 'system', lookup: LOOKUP_DEFAULT };
+  var settings = { theme: 'system' };
   try {
     var st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
     if (st) {
       if (st.theme === 'light' || st.theme === 'dark') settings.theme = st.theme;
-      if (typeof st.lookup === 'boolean') settings.lookup = st.lookup;
     }
   } catch (e) {}
   function saveSettings() {
@@ -235,19 +233,16 @@
     var words = (ended ? puzzle.words.slice() : Array.from(found))
                   .sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
     foundEl.innerHTML = '';
-    foundEl.classList.toggle('nolookup', !settings.lookup);
     words.forEach(function (w) {
       var s = document.createElement('span');
       // Nur die Anzeige ist klein — w bleibt original-cased (Wiktionary-Lookup/Link
       // brauchen die echte Groß-/Kleinschreibung, s. showDef/renderDef unten).
       s.textContent = w.toLowerCase();
       s.className = (found.has(w) ? 'got' : 'miss') + (w.length === 9 ? ' pan' : '');
-      if (settings.lookup) {                              // aus = Wörter reagieren gar nicht (kein Netz)
-        s.addEventListener('click', function (e) { e.stopPropagation(); toggleDef(w, s); });
-        if (HOVER) {
-          s.addEventListener('mouseenter', function () { if (!defpop.dataset.pin) showDef(w, s, false); });
-          s.addEventListener('mouseleave', function () { if (!defpop.dataset.pin) hideDef(); });
-        }
+      s.addEventListener('click', function (e) { e.stopPropagation(); toggleDef(w, s); });
+      if (HOVER) {
+        s.addEventListener('mouseenter', function () { if (!defpop.dataset.pin) showDef(w, s, false); });
+        s.addEventListener('mouseleave', function () { if (!defpop.dataset.pin) hideDef(); });
       }
       foundEl.appendChild(s);
     });
@@ -315,10 +310,7 @@
     modal.addEventListener('click', onBackdrop);
   }
 
-  // ── Worterklärung (de.wiktionary, live) ────────────────────────────────────
-  var defCache = {}, wtCache = {};
-  var WIKT_API = 'https://de.wiktionary.org/w/api.php?action=parse&prop=wikitext' +
-                 '&format=json&origin=*&redirects=1&page=';
+  // ── Worterklärung (aus dem mitgelieferten Paket, kein Netz) ────────────────
 
   function toggleDef(w, el) {
     if (defpop.dataset.pin === w && !defpop.hidden) { hideDef(true); return; }
@@ -348,103 +340,15 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
-  function wikitext(title) {
-    if (wtCache[title] !== undefined) return Promise.resolve(wtCache[title]);
-    return fetch(WIKT_API + encodeURIComponent(title))
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var wt = (d && d.parse && d.parse.wikitext && d.parse.wikitext['*']) || '';
-        wtCache[title] = wt; return wt;
-      });
-      // Kein catch: Netzfehler dürfen nicht als '' in wtCache landen (sonst bleibt das
-      // Wort nach Reconnect bedeutungslos) — fetchDef unterscheidet damit offline/leer.
-  }
-  function germanSection(wt) {                            // deutscher Sprachabschnitt
-    var m = wt && wt.match(/==[^\n]*\(\{\{Sprache\|Deutsch\}\}\)[^\n]*==([\s\S]*?)(?=\n==[^=]|$)/);
-    return m ? m[1] : '';
-  }
-  function cleanWiki(s) {                                 // Wiki-Markup → Klartext
-    return s
-      .replace(/<ref[^>]*\/>/gi, '').replace(/<ref[\s\S]*?<\/ref>/gi, '')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/\{\{K\|([^}]*)\}\}/g, function (_, p) {   // Kontext-Tag → "Bereich: "
-        var ps = p.split('|').filter(function (x) { return x && x.indexOf('=') < 0; });
-        return ps.length ? ps.join(', ') + ': ' : '';
-      })
-      .replace(/\{\{[^{}]*\}\}/g, '')                     // übrige Vorlagen raus
-      .replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1')        // [[ziel|text]] → text
-      .replace(/\[\[([^\]]*)\]\]/g, '$1')                 // [[wort]] → wort
-      .replace(/'''?/g, '')
-      .replace(/\s+/g, ' ').trim();
-  }
-  function meanings(sec) {                                // nummerierte Bedeutungen
-    var m = sec.match(/\{\{Bedeutungen\}\}\s*\n([\s\S]*?)(?=\n\{\{|\n\n|$)/);
-    if (!m) return [];
-    var out = [];
-    m[1].split('\n').forEach(function (line) {
-      line = line.replace(/^:/, '').trim();
-      var mm = line.match(/^\[([\d ,.–\-]+)\]\s*(.*)$/);
-      if (mm) {
-        var txt = cleanWiki(mm[2]);
-        if (txt) out.push('[' + mm[1].replace(/\s/g, '') + '] ' + txt);
-      } else if (out.length && line && line[0] !== '{') {
-        out[out.length - 1] += ' ' + cleanWiki(line);    // Fortsetzungszeile
-      }
-    });
-    return out;
-  }
-  function baseForm(sec) {                                // Beugung → Grundform + Label
-    var lemma = '';
-    var g = sec.match(/\{\{Grundformverweis[^}]*\}\}/);
-    if (g) {
-      g[0].slice(2, -2).split('|').slice(1).some(function (p) {
-        if (p && p.indexOf('=') < 0) { lemma = p.trim(); return true; }
-      });
-    }
-    if (!lemma) {
-      var d = sec.match(/des (?:Substantivs|Verbs|Adjektivs|Adverbs|Pronomens|Numerals)\s+'*\[\[([^\]|]+)/);
-      if (d) lemma = d[1].trim();
-    }
-    if (!lemma) {
-      var v = sec.match(/\bvon\s+'*\[\[([^\]|]+)\]\]/);
-      if (v) lemma = v[1].trim();
-    }
-    if (!lemma) return null;
-    var rel = /\bKomparativ\b/.test(sec) ? 'Komparativ'
-            : /\bSuperlativ\b/.test(sec) ? 'Superlativ'
-            : /\bPlural\b/.test(sec) ? 'Plural'
-            : /\bSingular\b/.test(sec) ? 'Singular' : 'Form';
-    return { lemma: lemma, label: rel + ' von ' + lemma };
-  }
-  function localDef(w) {                                  // eingebackenes Paket (Offline-APK)
-    var D = window.WM_DEFS;
-    if (!D || !D.pages) return null;                      // Pi-Version: weiter live
+  function localDef(w) {                                  // das mitgelieferte Erklärungspaket
+    var D = window.WM_DEFS || { pages: {}, words: {} };    // fehlt es, bleibt die Blase leer
     var page = (D.words && D.words[w]) || (D.pages[w] ? w : null);
     if (!page) return { meanings: [], local: true };      // Wort ohne Eintrag — nicht "offline"
     return { page: page, deriv: page === w ? null : 'zu ' + page,
              meanings: D.pages[page].slice(), local: true };
   }
-  function fetchDef(w) {
-    var loc = localDef(w);
-    if (loc) return Promise.resolve(loc);
-    if (defCache[w]) return Promise.resolve(defCache[w]);
-    return wikitext(w).then(function (wt) {
-      var sec = germanSection(wt);
-      if (!sec) return { meanings: [] };
-      var ms = meanings(sec);
-      if (ms.length) return { meanings: ms };
-      var base = baseForm(sec);                           // Beugung → Grundform nachladen
-      if (base) {
-        return wikitext(base.lemma).then(function (bwt) {
-          return { deriv: base.label, meanings: meanings(germanSection(bwt)) };
-        });
-      }
-      return { meanings: [] };
-    }).then(function (res) {
-      defCache[w] = res; return res;
-    // offline:true statt leerer Bedeutungen — "keine Verbindung" und "Wort hat
-    // keinen Wiktionary-Eintrag" sind für den Nutzer zwei verschiedene Antworten.
-    }).catch(function () { return { offline: true, meanings: [] }; });
+  function fetchDef(w) {                                  // synchron, aber Promise:
+    return Promise.resolve(localDef(w));                  // showDef() erwartet ein Promise
   }
   function renderDef(w, res) {
     var html = '<div class="w">' + esc(w.toLowerCase()) + '</div>';
@@ -454,8 +358,6 @@
       show.forEach(function (m) { html += '<div class="bd">' + esc(m) + '</div>'; });
       if (ms.length > show.length)
         html += '<div class="muted">(+' + (ms.length - show.length) + ' weitere)</div>';
-    } else if (res.offline) {
-      html += '<div class="muted">Keine Verbindung — Worterklärungen kommen von de.wiktionary.org.</div>';
     } else {
       html += '<div class="muted">Keine Bedeutung gefunden.</div>';
     }
@@ -561,20 +463,11 @@
             '<button data-theme="light">Hell</button>' +
             '<button data-theme="dark">Dunkel</button>' +
           '</div></div>' +
-        '<div class="setting">' +
-          '<label class="switch"><input type="checkbox" id="lookup-toggle">' +
-            '<span>Worterklärungen</span></label>' +
-          '<div class="hint">' + (window.WM_DEFS
-            ? 'Zeigt zu angetippten Wörtern eine kurze Erklärung. Sie steckt in der App — ohne Netz.'
-            : 'Schlägt angetippte Wörter der Lösungsliste online bei de.wiktionary.org nach. ' +
-              'Ausgeschaltet reagieren die Wörter nicht aufs Antippen.') + '</div>' +
-        '</div>' +
         '<div class="row"><button id="settings-close" class="primary">Fertig</button></div>' +
       '</div>';
     document.body.appendChild(modal);
 
     var seg = modal.querySelector('#theme-seg');
-    var lk = modal.querySelector('#lookup-toggle');
     function renderSeg() {
       Array.prototype.forEach.call(seg.children, function (b) {
         b.classList.toggle('sel', b.dataset.theme === settings.theme);
@@ -582,7 +475,6 @@
     }
     gear.addEventListener('click', function () {
       renderSeg();
-      lk.checked = settings.lookup;
       modal.hidden = false;
     });
     seg.addEventListener('click', function (e) {
@@ -590,12 +482,6 @@
       if (!b) return;
       settings.theme = b.dataset.theme;
       saveSettings(); applyTheme(); renderSeg();
-    });
-    lk.addEventListener('change', function () {
-      settings.lookup = lk.checked;
-      saveSettings();
-      hideDef(true);                                      // offenes Popover schließen
-      if (puzzle) renderFound();                          // Wortlisten-Handler sofort an/aus
     });
     function close() { modal.hidden = true; }
     modal.querySelector('#settings-close').addEventListener('click', close);

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -37,5 +38,17 @@
 
     <!-- Keine Berechtigungen: Rätsel und Worterklärungen stecken in der App.
          Der Wiktionary-Link öffnet den Systembrowser per Intent — das braucht
-         für uns kein INTERNET. -->
+         für uns kein INTERNET.
+
+         androidx.core deklariert ungefragt eine app-eigene Signatur-Berechtigung
+         (DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, für ContextCompat.registerReceiver
+         auf Android 13). Wir registrieren nirgends einen Broadcast-Receiver — weder
+         unser Code noch Capacitor — also nehmen wir sie wieder heraus. Sonst zeigt
+         F-Droid sie roh und ohne Erklärung als unerwartete Berechtigung an. -->
+    <permission
+        android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        tools:node="remove" />
 </manifest>

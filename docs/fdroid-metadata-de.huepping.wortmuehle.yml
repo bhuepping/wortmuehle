@@ -1,7 +1,11 @@
 # Spiegel des fdroiddata-Rezepts: metadata/de.huepping.wortmuehle.yml
 # Eingereicht als MR https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42900
-# Stand: 1.1-Update vom 2026-07-16 (Commit 527c3c44c im MR) — Worterklärungen
-# jetzt Opt-in (F-Droid-Review: sonst TetheredNet-Anti-Feature).
+# Stand: 1.2 (2026-08-20). Der Opt-in-Schalter aus 1.1 ist wieder weg — er war die
+# Antwort auf den Review-Einwand (linsui: TetheredNet-Anti-Feature oder konfigurierbar).
+# 1.2 löst das gründlicher: die Worterklärungen sind eingebacken, die INTERNET-
+# Berechtigung ist ersatzlos entfernt, die App fordert gar keine Berechtigung mehr.
+# Neue Versionen trägt der checkupdates-Bot nach (UpdateCheckMode: Tags) — an diesem
+# Rezept ist dafür nichts zu ändern.
 # Kein Summary/Description hier: die kommen aus fastlane/ im App-Repo
 # (fdroiddata-MR-Template: "Do not add summary and description in fdroiddata").
 # Review-Erkenntnisse (linsui):

@@ -769,7 +769,9 @@ def build_defs(con):
         senses.setdefault(title, []).append(clean_wiki(txt))
     base = {}
     for t, lemma in con.execute("SELECT title, lemma FROM stg_wikt_baseform"):
-        base.setdefault(t, []).append(lemma)
+        # Verweise tragen oft einen Abschnittsanker ("Alte#Substantiv,_f") — der
+        # trifft auf keinen Seitentitel, also abschneiden.
+        base.setdefault(t, []).append(lemma.split("#", 1)[0].strip())
 
     rows, pages, wmap = [], {}, {}
     n_direct = n_base = 0
