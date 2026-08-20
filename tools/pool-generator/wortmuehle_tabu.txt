@@ -1,3 +1,4 @@
+# NUR EIN SPIEGEL — bearbeite piGallery/data/wortmuehle_tabu.txt, nicht diese Datei.
 # Wortmühle — unerwünschte Wörter (gültig, aber nicht zeigbar).
 #
 # Diese Wörter werden NICHT aus dem Lexikon gestrichen. Stattdessen fällt jedes
@@ -21,7 +22,6 @@ bimbo*
 itaker*
 polacke*
 polack
-mischling*
 rothaut
 rothäute
 schlitzauge*
@@ -35,7 +35,6 @@ rumhur*
 nutt*
 fotze*
 möse*
-muschi*
 schlampe*
 flittchen
 zuhälter*
@@ -43,10 +42,6 @@ bordell*
 callgirl*
 porno*
 fick*
-wichs*
-onanie*
-onanier*
-sperma*
 ejakul*
 orgasmus
 orgasmen
@@ -76,11 +71,22 @@ kack*
 piss*
 titte*
 
-# ── Anatomie (mild — kann raus, falls zu teuer) ─────────────────────────────
-penis*
-vagina*
-vulva
-hoden*
-schamlippe*
+# ── Herabsetzend, altmodisch ────────────────────────────────────────────────
 dirne
 dirnen
+
+# ── Vorsilben-Formen (die Präfix-Regel greift nur am Wortanfang) ─────────────
+verarsch*
+bekack*
+verpiss*
+gehurt
+verhur*
+beschiss*
+bescheiß*
+angepiss*
+angeschiss*
+zerfick*
+abfick*
+durchfick*
+vollgekack*
+angekack*
