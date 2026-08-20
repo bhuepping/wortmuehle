@@ -209,6 +209,8 @@ html, body {
 .defpop .deriv { color: var(--muted); font-style: italic; margin-bottom: 4px; }
 .defpop .bd { margin: 2px 0; }
 .defpop .muted { color: var(--muted); }
+.defpop .src { color: var(--muted); font-size: .72rem; margin-top: 6px; }
+.defpop .src a { display: inline; margin: 0; font-size: inherit; color: inherit; text-decoration: underline; }
 .defpop a { display: inline-block; margin-top: 6px; color: var(--accent); text-decoration: none; font-size: .8rem; }
 
 /* ── Bestätigungs-Dialog ──────────────────────────────────────────────────── */

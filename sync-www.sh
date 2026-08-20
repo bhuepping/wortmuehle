@@ -29,6 +29,24 @@ json.dump(d, open(dst, 'w', encoding='utf-8'), ensure_ascii=False, separators=('
 print('pool baked:', len(d['puzzles']), 'puzzles')
 PY
 
+# Worterklärungen einbacken: eigenes Asset mit eigenem Lizenzkopf (CC BY-SA 4.0),
+# damit die Share-Alike-Bedingung nicht in den GPLv3-Code hineinreicht.
+python3 - "$PIG/data/wortmuehle_defs.json" "$APP/www/defs.js" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+lic = d['_lizenz']
+head = ('/*! Worterklaerungen: %s\n'
+        ' *  Lizenz: %s  <%s>\n'
+        ' *  Bearbeitung: %s\n'
+        ' *  %s\n'
+        ' *  Erzeugt von buchstabiene/build_db.py defs — nicht von Hand aendern. */\n'
+        % (lic['quelle'], lic['lizenz'], lic['lizenz_url'], lic['bearbeitung'], lic['hinweis']))
+body = json.dumps({'pages': d['pages'], 'words': d['words']},
+                  ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+open(sys.argv[2], 'w', encoding='utf-8').write(head + 'window.WM_DEFS=' + body + ';\n')
+print('defs baked:', len(d['pages']), 'Seiten,', len(d['words']), 'Verweise')
+PY
+
 # Offline-Patches am JS (idempotent; bricht ab, wenn der Anker fehlt = upstream geändert)
 python3 - "$APP/www/wortmuehle.js" <<'PY'
 import sys

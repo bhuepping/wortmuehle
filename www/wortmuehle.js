@@ -416,7 +416,17 @@
             : /\bSingular\b/.test(sec) ? 'Singular' : 'Form';
     return { lemma: lemma, label: rel + ' von ' + lemma };
   }
+  function localDef(w) {                                  // eingebackenes Paket (Offline-APK)
+    var D = window.WM_DEFS;
+    if (!D || !D.pages) return null;                      // Pi-Version: weiter live
+    var page = (D.words && D.words[w]) || (D.pages[w] ? w : null);
+    if (!page) return { meanings: [], local: true };      // Wort ohne Eintrag — nicht "offline"
+    return { page: page, deriv: page === w ? null : 'zu ' + page,
+             meanings: D.pages[page].slice(), local: true };
+  }
   function fetchDef(w) {
+    var loc = localDef(w);
+    if (loc) return Promise.resolve(loc);
     if (defCache[w]) return Promise.resolve(defCache[w]);
     return wikitext(w).then(function (wt) {
       var sec = germanSection(wt);
@@ -449,7 +459,10 @@
     } else {
       html += '<div class="muted">Keine Bedeutung gefunden.</div>';
     }
-    return html + '<a href="https://de.wiktionary.org/wiki/' + encodeURIComponent(w) +
+    if (show.length)                                      // CC BY-SA verlangt Quelle + Änderungshinweis
+      html += '<div class="src">de.wiktionary.org · <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de"' +
+              ' target="_blank" rel="noopener">CC BY-SA 4.0</a> · gekürzt</div>';
+    return html + '<a href="https://de.wiktionary.org/wiki/' + encodeURIComponent(res.page || w) +
            '" target="_blank" rel="noopener">↗ Wiktionary</a>';
   }
 
@@ -551,8 +564,10 @@
         '<div class="setting">' +
           '<label class="switch"><input type="checkbox" id="lookup-toggle">' +
             '<span>Worterklärungen</span></label>' +
-          '<div class="hint">Schlägt angetippte Wörter der Lösungsliste online bei ' +
-            'de.wiktionary.org nach. Ausgeschaltet reagieren die Wörter nicht aufs Antippen.</div>' +
+          '<div class="hint">' + (window.WM_DEFS
+            ? 'Zeigt zu angetippten Wörtern eine kurze Erklärung. Sie steckt in der App — ohne Netz.'
+            : 'Schlägt angetippte Wörter der Lösungsliste online bei de.wiktionary.org nach. ' +
+              'Ausgeschaltet reagieren die Wörter nicht aufs Antippen.') + '</div>' +
         '</div>' +
         '<div class="row"><button id="settings-close" class="primary">Fertig</button></div>' +
       '</div>';

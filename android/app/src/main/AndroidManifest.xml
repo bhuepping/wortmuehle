@@ -35,7 +35,7 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
-
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Keine Berechtigungen: Rätsel und Worterklärungen stecken in der App.
+         Der Wiktionary-Link öffnet den Systembrowser per Intent — das braucht
+         für uns kein INTERNET. -->
 </manifest>

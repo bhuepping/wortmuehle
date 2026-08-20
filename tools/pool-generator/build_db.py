@@ -31,8 +31,9 @@ Usage:
     python3 build_db.py why <word>     # explain a word's lineage + verdict
     python3 build_db.py report         # counts per source / reason
     python3 build_db.py prune          # Tabuliste erneut auf den fertigen Pool anwenden
+    python3 build_db.py defs           # Worterklärungen -> word_meaning + wortmuehle_defs.json
 """
-import os, re, sys, bz2, sqlite3, subprocess, glob, json, time, hashlib
+import os, re, sys, bz2, sqlite3, subprocess, glob, json, time, hashlib, html
 from collections import Counter
 
 BASE  = os.path.dirname(os.path.abspath(__file__))
@@ -284,6 +285,11 @@ def classify(tags):
 
 
 def clean_wiki(s):
+    for _ in range(2):            # Dump ist HTML-escaped, teils doppelt ("&amp;nbsp;")
+        u = html.unescape(s)
+        if u == s:
+            break
+        s = u
     s = re.sub(r"<ref[^>]*/>", "", s)
     s = re.sub(r"<ref[\s\S]*?</ref>", "", s)
     s = re.sub(r"<!--[\s\S]*?-->", "", s)
@@ -294,6 +300,9 @@ def clean_wiki(s):
     s = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", s)
     s = re.sub(r"\[\[([^\]]*)\]\]", r"\1", s)
     s = s.replace("'''", "").replace("''", "")
+    s = re.sub(r"<[^>]{1,40}>", "", s)        # Reste wie <sup>, <small>
+    s = re.sub(r"\[\d+(?:[,\u2013-]\d+)*\]", "", s)   # Fussnoten-Marker "[3]"
+    s = s.replace("\xa0", " ")
     return re.sub(r"\s+", " ", s).strip()
 
 
@@ -731,6 +740,78 @@ def report(con):
     print(f"\n    accepted {acc}/{tot} surfaces → {play} playable lower-forms")
 
 
+
+# ── DEFS (Worterklärungen für die Auslieferung) ─────────────────────────────
+DEFS  = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_defs.json"))
+MAX_SENSES = 2                    # gekürzt: die ersten beiden Bedeutungen genügen im Spiel
+
+DEFS_LICENSE = {
+    "quelle": "de.wiktionary.org",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenz_url": "https://creativecommons.org/licenses/by-sa/4.0/deed.de",
+    "bearbeitung": "gekuerzt auf die ersten %d Bedeutungen, Wiki-Markup entfernt" % MAX_SENSES,
+    "hinweis": "Autoren siehe Versionsgeschichte der jeweils verlinkten Wiktionary-Seite",
+}
+
+
+def build_defs(con):
+    """Jedes Rätselwort auf Wiktionary-Bedeutungen abbilden — direkt oder über die
+    Grundform ("Aale" -> "Aal"). Ergebnis: joinbare Tabelle + auslieferbares JSON."""
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS word_meaning (
+        surface TEXT NOT NULL,      -- joint auf word.surface / puzzle_word.word
+        page    TEXT NOT NULL,      -- Wiktionary-Seite, die die Bedeutung liefert
+        via     TEXT NOT NULL,      -- 'direkt' | 'grundform'
+        ord     INT  NOT NULL,
+        text    TEXT NOT NULL,
+        PRIMARY KEY (surface, ord)
+    );
+    CREATE INDEX IF NOT EXISTS ix_meaning_page ON word_meaning(page);
+    """)
+    con.execute("DELETE FROM word_meaning")
+
+    pool = json.load(open(OUT, encoding="utf-8"))
+    words = sorted({w for p in pool["puzzles"] for w in p["words"]})
+
+    senses = {}
+    for title, txt in con.execute(
+            "SELECT title, text FROM stg_wikt_meaning ORDER BY title, ord"):
+        senses.setdefault(title, []).append(clean_wiki(txt))
+    base = {}
+    for t, lemma in con.execute("SELECT title, lemma FROM stg_wikt_baseform"):
+        base.setdefault(t, []).append(lemma)
+
+    rows, pages, wmap = [], {}, {}
+    n_direct = n_base = 0
+    for w in words:
+        if w in senses:
+            page, via = w, "direkt"; n_direct += 1
+        else:
+            page = next((l for l in base.get(w, []) if l in senses), None)
+            if not page:
+                continue
+            via = "grundform"; n_base += 1
+        texts = [t for t in senses[page][:MAX_SENSES] if t]
+        if not texts:
+            continue
+        for i, t in enumerate(texts):
+            rows.append((w, page, via, i, t))
+        pages[page] = texts
+        if page != w:
+            wmap[w] = page
+    con.executemany("INSERT INTO word_meaning VALUES (?,?,?,?,?)", rows)
+    con.commit()
+
+    out = {"_lizenz": DEFS_LICENSE, "pages": pages, "words": wmap}
+    with open(DEFS, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    cov = n_direct + n_base
+    print(f"· word_meaning: {len(rows)} Zeilen fuer {cov}/{len(words)} Woerter "
+          f"({100*cov/len(words):.1f} %) — {n_direct} direkt, {n_base} ueber Grundform")
+    print(f"· {len(pages)} Wiktionary-Seiten, {len(wmap)} Verweise")
+    print(f"· wrote {DEFS}  ({os.path.getsize(DEFS)/1048576:.2f} MB)")
+
+
 # ── CLI ─────────────────────────────────────────────────────────────────────
 def main():
     args = sys.argv[1:]
@@ -752,6 +833,8 @@ def main():
         mart(con)
     elif cmd == "prune":
         prune()
+    elif cmd == "defs":
+        build_defs(con)
     elif cmd == "why":
         why(con, args[1])
     elif cmd == "report":
