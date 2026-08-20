@@ -8,7 +8,7 @@
 set -euo pipefail
 PIG=/home/bjoern/claude/piGallery
 APP=/home/bjoern/claude/wortmuehle-app
-GEN=/home/bjoern/claude/buchstabiene
+GEN=/home/bjoern/claude/wortmuehle-pool
 
 cp "$PIG/static/wortmuehle.css" "$APP/www/wortmuehle.css"
 cp "$PIG/static/wortmuehle.js"  "$APP/www/wortmuehle.js"
@@ -39,7 +39,7 @@ head = ('/*! Worterklaerungen: %s\n'
         ' *  Lizenz: %s  <%s>\n'
         ' *  Bearbeitung: %s\n'
         ' *  %s\n'
-        ' *  Erzeugt von buchstabiene/build_db.py defs — nicht von Hand aendern. */\n'
+        ' *  Erzeugt von wortmuehle-pool/build_db.py defs — nicht von Hand aendern. */\n'
         % (lic['quelle'], lic['lizenz'], lic['lizenz_url'], lic['bearbeitung'], lic['hinweis']))
 body = json.dumps({'pages': d['pages'], 'words': d['words']},
                   ensure_ascii=False, separators=(',', ':'), sort_keys=True)
