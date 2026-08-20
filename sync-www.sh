@@ -70,4 +70,4 @@ PY
 
 cd "$APP"
 npx --no-install cap sync android
-echo "Fertig. APK bauen: cd android && JAVA_HOME=… ANDROID_HOME=… ./gradlew assembleDebug"
+echo "Fertig. APK bauen: source ~/claude/.tools/android-env.sh && cd android && ./gradlew assembleDebug"

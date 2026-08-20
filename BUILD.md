@@ -29,14 +29,20 @@ beiden Offline-Patches (`puzzleFor`-Modulo-Fallback, `dayLoaded`). `sync-www.sh`
 nach jedem Kopieren wieder ein und bricht ab, falls der piGallery-JS-Anker sich geändert hat.
 
 ## APK bauen
-Benötigt **JDK 17** und das **Android SDK** (compileSdk 34, build-tools, platform-tools,
-Lizenzen akzeptiert). Beides userspace installierbar (kein sudo):
+Toolchain liegt fertig unter `~/claude/.tools/` (JDK 17, Android SDK 34, node) —
+**bewusst nicht in `$HOME`**: die bwrap-Sandbox mountet `/home` als tmpfs, dort
+installierte Tools sind nach der Session weg (so gingen JDK/SDK/node schon einmal
+verloren). `android/local.properties` zeigt auf denselben Pfad.
 ```sh
-export JAVA_HOME=/pfad/zu/jdk-17
-export ANDROID_HOME=/pfad/zu/android-sdk     # cmdline-tools/sdkmanager
+source ~/claude/.tools/android-env.sh   # JAVA_HOME, ANDROID_HOME, GRADLE_USER_HOME, PATH
 cd android
 ./gradlew assembleDebug      # → app/build/outputs/apk/debug/app-debug.apk  (sideloadbar)
 ```
+Neu aufsetzen (falls `.tools` mal fehlt): Temurin JDK 17 (`api.adoptium.net`) nach
+`.tools/jdk17`, `commandlinetools-linux-*.zip` nach `.tools/android-sdk/cmdline-tools/latest`,
+dann `sdkmanager --licenses` und `sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"`.
+Zusammen ~800 MB.
+
 ## Release bauen (signiert)
 `keystore.properties` + `release.keystore` liegen im Repo-Root und sind **nicht
 eingecheckt** (.gitignore) — **beide sichern**, der Keystore ist die dauerhafte
@@ -46,6 +52,7 @@ lassen sich daher nicht mit unseren APKs cross-updaten und umgekehrt.
 Fehlt die Datei (frischer Checkout, F-Droid-Buildserver), baut Gradle ein
 unsigniertes Release.
 ```sh
+source ~/claude/.tools/android-env.sh
 cd android
 ./gradlew assembleRelease   # → app/build/outputs/apk/release/app-release.apk
 ```
