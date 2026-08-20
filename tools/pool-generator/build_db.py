@@ -13,6 +13,7 @@ only a projection at play time, so excluding the name never removes the verb for
 
 Sources:
   * wngerman            morphologically dense wordlist (inflections + compounds)
+    (bis 2026-08-20 wurden daraus Kurzimperative erzeugt — der Test taugte nicht, s. conform())
   * de.wiktionary dump  part-of-speech / name / abbreviation / inflection + base forms
   * de_50k.txt          OpenSubtitles frequency (seeds + difficulty; mart stage)
   * extra_words.txt     manual include list   (staged into stg_manual)
@@ -403,17 +404,11 @@ def conform(con):
     man = {r[0] for r in con.execute("SELECT surface FROM stg_manual WHERE action='include'")
            if is_candidate(r[0])}
 
-    # generated short imperatives: "kralle" -> "krall" (verb-checked via -st / -en)
-    wn_low = {w.lower() for w in wn}
-    imper = set()
-    for w in wn_low:
-        if w.endswith("e") and len(w) - 1 >= MIN_LEN:
-            base = w[:-1]
-            if (base + "st") in wn_low and (base + "en") in wn_low:
-                imper.add(base)
-    imper = {b for b in imper if is_candidate(b)}
-
-    surfaces = wn | wk | man | imper
+    # Kein Imperativ-Generator mehr: "stamm+st" und "stamm+en" in der Wortliste sind
+    # kein Verbtest. Sie treffen auch auf trennbare Verben ("abheb" — es heißt "heb ab"),
+    # Konjunktivstämme ("bekäm") und Substantivfamilien (Anarchie/Anarchist/Anarchien).
+    # Echte Kurzimperative wie "krall" stehen ohnehin in Wiktionary oder wngerman.
+    surfaces = wn | wk | man
     con.executemany(
         "INSERT OR IGNORE INTO word(surface, lower_form, length, is_acronym) VALUES (?,?,?,?)",
         [(s, s.lower(), len(s), 1 if is_acronym(s) else 0) for s in surfaces])
@@ -427,8 +422,6 @@ def conform(con):
         wk_cat.setdefault(title, set()).add(cat)
     con.executemany("INSERT OR IGNORE INTO word_source(surface, source, attr) VALUES (?, 'wikt', ?)",
                     [(t, ",".join(sorted(c))) for t, c in wk_cat.items()])
-    con.executemany("INSERT OR IGNORE INTO word_source(surface, source, attr) VALUES (?, 'gen_imperative', NULL)",
-                    [(s,) for s in imper])
     con.executemany("INSERT OR IGNORE INTO word_source(surface, source, attr) VALUES (?, 'manual', ?)",
                     [(r[0], r[1]) for r in con.execute("SELECT surface, action FROM stg_manual").fetchall()
                      if is_candidate(r[0])])
@@ -438,7 +431,7 @@ def conform(con):
                    JOIN stg_freq f ON f.surface = w.surface""")
     con.commit()
     n = con.execute("SELECT COUNT(*) FROM word").fetchone()[0]
-    print(f"· word: {n} surfaces (wngerman={len(wn)} wikt={len(wk)} imper={len(imper)} manual_inc={len(man)})")
+    print(f"· word: {n} surfaces (wngerman={len(wn)} wikt={len(wk)} manual_inc={len(man)})")
 
 
 # ── DECIDE (the source of truth: pure SQL rules) ────────────────────────────
@@ -452,7 +445,6 @@ REASONS = [
     ("ex_namelist",     "exclude",  45, "in given-names gazetteer (and no Wiktionary sense)"),
     ("ex_name_genitive","exclude",  42, "genitive/plural -s of a known name (no own sense)"),
     ("inc_wngerman",    "include",  40, "present in wngerman"),
-    ("inc_generated",   "include",  30, "generated imperative form"),
     ("ex_no_source",    "exclude",   0, "no accepting source"),
 ]
 
@@ -479,7 +471,6 @@ flags AS (
         EXISTS(SELECT 1 FROM stg_manual m WHERE m.lower_form = w.lower_form AND m.action='include') AS man_inc,
         EXISTS(SELECT 1 FROM stg_manual m WHERE m.lower_form = w.lower_form AND m.action='exclude') AS man_exc,
         EXISTS(SELECT 1 FROM stg_wngerman g WHERE g.surface = w.surface) AS in_wn,
-        EXISTS(SELECT 1 FROM word_source ws WHERE ws.surface = w.surface AND ws.source='gen_imperative') AS gen_imp,
         EXISTS(SELECT 1 FROM stg_namelist nl WHERE nl.lower_form = w.lower_form) AS in_gazetteer,
         (w.lower_form LIKE '%s' AND EXISTS(           -- "Steves" = "Steve" + genitive/plural -s
             SELECT 1 FROM names n
@@ -500,7 +491,6 @@ matched AS (
     UNION ALL SELECT surface, 'ex_namelist'      FROM flags WHERE in_gazetteer
     UNION ALL SELECT surface, 'ex_name_genitive' FROM flags WHERE is_name_gen AND NOT has_common
     UNION ALL SELECT surface, 'inc_wngerman'     FROM flags WHERE in_wn
-    UNION ALL SELECT surface, 'inc_generated'    FROM flags WHERE gen_imp
     UNION ALL SELECT surface, 'ex_no_source'     FROM word
 ),
 ranked AS (

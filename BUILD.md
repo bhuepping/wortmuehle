@@ -39,6 +39,11 @@ source ~/claude/.tools/android-env.sh   # JAVA_HOME, ANDROID_HOME, GRADLE_USER_H
 cd android
 ./gradlew assembleDebug      # → app/build/outputs/apk/debug/app-debug.apk  (sideloadbar)
 ```
+Wächst das APK unerwartet (hier einmal um 900 KB), ist es tote Luft: Gradle packt
+inkrementell und lässt ersetzte Assets als Leichen im Archiv liegen. `./gradlew clean
+assembleDebug` räumt auf — die Nutzdaten sind vorher wie nachher gleich groß, prüfbar
+mit `unzip -v app-debug.apk | tail -3`.
+
 Neu aufsetzen (falls `.tools` mal fehlt): Temurin JDK 17 (`api.adoptium.net`) nach
 `.tools/jdk17`, `commandlinetools-linux-*.zip` nach `.tools/android-sdk/cmdline-tools/latest`,
 dann `sdkmanager --licenses` und `sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"`.
