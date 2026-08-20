@@ -1,7 +1,7 @@
 # Wortmühle — Offline-APK
 
 Capacitor-Wrapper um das Vanilla-JS-Webspiel aus `piGallery`. **Der komplette
-Rätselpool (~2800 Rätsel) ist eingebacken** → läuft vollständig offline, kein Pi nötig.
+Rätselpool (2500 Rätsel, der Tages-Fahrplan) ist eingebacken** → läuft vollständig offline, kein Pi nötig.
 Auch die Worterklärungen sind eingebacken (`www/defs.js`, aus dem
 de.wiktionary-Dump). Die App macht **keine Netzzugriffe** und hat **keine
 Berechtigungen** im Manifest. `www/defs.js` steht unter CC BY-SA 4.0 und trägt

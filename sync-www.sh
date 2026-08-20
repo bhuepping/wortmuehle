@@ -18,15 +18,22 @@ cp "$GEN/build_db.py" "$GEN/blacklist.txt" "$GEN/extra_words.txt" "$GEN/SOURCES.
 { echo "# NUR EIN SPIEGEL — bearbeite piGallery/data/wortmuehle_tabu.txt, nicht diese Datei."
   cat "$PIG/data/wortmuehle_tabu.txt"; } > "$APP/tools/pool-generator/wortmuehle_tabu.txt"
 
-# voller Pool, sortiert nach id = Server-Rotationsordnung (Schema 5, ein Rätsel/Tag)
+# Nur die Rätsel mit festem Fahrplan-Platz, nach seq sortiert. Dann trifft das
+# Offline-Modulo (`liste[Tag mod Länge]`) exakt die Wahl des Servers. Die Reserve
+# bleibt draußen — sie hat keinen Tag und würde die Rechnung verschieben.
 python3 - "$PIG/data/wortmuehle_pool.json" "$APP/www/pool.json" <<'PY'
 import json, sys
 src, dst = sys.argv[1], sys.argv[2]
 d = json.load(open(src, encoding='utf-8'))
-d['puzzles'] = sorted(d['puzzles'], key=lambda p: p['id'])
-d.setdefault('meta', {})['offline'] = True
+cycle = d['meta']['cycle']
+geplant = sorted((p for p in d['puzzles'] if p.get('seq') is not None),
+                 key=lambda p: p['seq'])
+if [p['seq'] for p in geplant] != list(range(cycle)):
+    sys.exit('FEHLER: Fahrplan ist lückenhaft — build_db.py mart neu laufen lassen.')
+d['puzzles'] = geplant
+d['meta'] = dict(d['meta'], offline=True, count=cycle)
 json.dump(d, open(dst, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-print('pool baked:', len(d['puzzles']), 'puzzles')
+print('pool baked:', len(geplant), 'puzzles (Zyklus', cycle, '- Reserve bleibt draußen)')
 PY
 
 # Worterklärungen einbacken: eigenes Asset mit eigenem Lizenzkopf (CC BY-SA 4.0),

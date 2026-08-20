@@ -74,6 +74,12 @@ def word_score(w):
 TOPN        = 50000               # frequency cutoff for seed (pangram) core
 BAND        = (25, 65)            # allowed solution count per puzzle (via center choice)
 TARGET      = 45                  # desired solution count
+CYCLE = 2500                      # Länge des Tages-Fahrplans. EINMAL festgelegt, NIE wieder
+                                  #   ändern: der Tag wählt über `seq == Tag mod CYCLE`, eine
+                                  #   andere Zahl verschiebt schlagartig jeden Tag. Bewusst
+                                  #   kleiner als der Pool — die Differenz ist die Reserve, aus
+                                  #   der frei gewordene Plätze nachbesetzt werden. 2500 Tage
+                                  #   sind knapp sieben Jahre, dann beginnt der Zyklus von vorn.
 POOL_SCHEMA = 5                   # 5: one puzzle/day (no difficulty tiers), Scrabble letter
                                   #    scoring. Full pool shipped to the Pi; the Flask server
                                   #    slices the rolling day-window per request.
@@ -570,6 +576,62 @@ def tabu_report(dropped, total):
 
 
 # ── MART (puzzles + JSON export, reads the accepted dictionary) ──────────────
+
+def assign_seq(puzzles):
+    """Jedem Rätsel seinen festen Platz im Fahrplan geben.
+
+    Der Tag wählt sein Rätsel über `seq == Tag mod cycle`. Damit sich Tage bei einem
+    Pool-Neubau NICHT verschieben, gilt: **cycle wird einmal festgelegt und nie wieder
+    geändert**, und ein überlebendes Rätsel behält seinen Platz. Nur Plätze, deren Rätsel
+    weggefallen ist, werden neu besetzt — genau diese Tage ändern sich, sonst keiner.
+
+    Rätsel ohne Platz (seq=None) sind Reserve: sie warten, bis ein Platz frei wird, und
+    werden nicht ausgeliefert. Reicht die Reserve nicht, bleibt ein Platz leer — dann
+    meldet das der Aufrufer, statt still den Zyklus zu verkürzen.
+    """
+    ids = [p["id"] for p in puzzles]
+    id_set = set(ids)
+    alt = {}
+    cycle = None
+    if os.path.exists(OUT):
+        try:
+            vorher = json.load(open(OUT, encoding="utf-8"))
+            cycle = vorher.get("meta", {}).get("cycle")
+            for q in vorher["puzzles"]:
+                if q.get("seq") is not None:
+                    alt[q["id"]] = q["seq"]
+        except Exception as e:
+            print(f"· Fahrplan: alter Pool nicht lesbar ({e}) — lege neu an")
+
+    if cycle is None:                      # Erstanlage
+        cycle = CYCLE
+        if len(ids) < cycle:
+            raise SystemExit(f"Pool hat nur {len(ids)} Rätsel, CYCLE={cycle} — zu wenig.")
+        erst = {i: k for k, i in enumerate(ids[:cycle])}
+        for i in ids[cycle:]:
+            erst[i] = None
+        print(f"· Fahrplan wird angelegt: cycle={cycle} (ab jetzt unveränderlich), "
+              f"{len(ids) - cycle} Rätsel auf der Reserve")
+        return erst, cycle
+    if cycle != CYCLE:
+        print(f"· Hinweis: Fahrplan läuft mit cycle={cycle}, Konstante sagt {CYCLE} — "
+              f"der Fahrplan gewinnt, sonst würden sich alle Tage verschieben.")
+
+    seq_by_id = {i: alt[i] for i in ids if i in alt and alt[i] < cycle}
+    belegt = set(seq_by_id.values())
+    frei = [k for k in range(cycle) if k not in belegt]
+    neu = [i for i in ids if i not in seq_by_id]           # neue + heimatlose Rätsel
+    for i in ids:
+        seq_by_id.setdefault(i, None)
+    for k, i in zip(frei, neu):
+        seq_by_id[i] = k
+    fehlend = len(frei) - len(neu)
+    if fehlend > 0:
+        print(f"· ACHTUNG: {fehlend} Fahrplan-Plätze bleiben leer — Reserve erschöpft")
+    print(f"· Fahrplan: {len(frei)} Plaetze frei geworden, {min(len(frei), len(neu))} neu besetzt")
+    return seq_by_id, cycle
+
+
 def mart(con):
     tabu, tabu_dropped = load_tabu(), Counter()
     # accepted play dictionary: one entry per lower_form with its display spelling
@@ -641,7 +703,8 @@ def mart(con):
                     [(p["id"], w.lower()) for p in puzzles for w in p["words"]])
     con.commit()
 
-    puzzles.sort(key=lambda p: p["id"])     # stable rotation order (= server/client modulo)
+    puzzles.sort(key=lambda p: p["id"])     # nur noch die Ausgangsordnung für neue Rätsel
+    seq_by_id, cycle = assign_seq(puzzles)
 
     # Ship the FULL pool to the Pi as data. The Flask server keeps these in memory and slices
     # the rolling day-window per request (today-7 … today+21) via `day % len(rotation)`,
@@ -651,12 +714,15 @@ def mart(con):
     # (no difficulty tiers — they didn't feel meaningfully different in practice; the BAND/
     # TARGET solution-count window above already keeps every puzzle in a similar difficulty
     # range regardless).
+    puzzles.sort(key=lambda p: (seq_by_id[p["id"]] is None, seq_by_id[p["id"]], p["id"]))
+    scheduled = sum(1 for p in puzzles if seq_by_id[p["id"]] is not None)
     pool = {
         "meta": {"schema": POOL_SCHEMA, "generated": time.strftime("%Y-%m-%d"),
-                 "topN": TOPN, "minLen": MIN_LEN, "count": n, "poolSize": n},
+                 "topN": TOPN, "minLen": MIN_LEN, "count": n, "poolSize": n,
+                 "cycle": cycle, "scheduled": scheduled, "reserve": n - scheduled},
         "puzzles": [{"tiles": p["tiles"], "center": p["center"], "words": p["words"],
                      "pangrams": p["pangrams"], "maxScore": p["maxScore"],
-                     "id": p["id"]} for p in puzzles],
+                     "id": p["id"], "seq": seq_by_id[p["id"]]} for p in puzzles],
     }
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(pool, f, ensure_ascii=False, separators=(",", ":"))
@@ -664,8 +730,8 @@ def mart(con):
     med = sorted(len(p["words"]) for p in puzzles)[n // 2] if n else 0
     uml = sum(1 for p in puzzles if any(c in "äöüß" for c in p["tiles"]))
     print(f"· wrote {OUT}")
-    print(f"  pool={n}  median_words={med}  umlaut_racks={uml}  size={size/1024:.0f} KiB  "
-          f"(full pool; server windows per request)")
+    print(f"  pool={n}  median_words={med}  umlaut_racks={uml}  size={size/1024:.0f} KiB")
+    print(f"  Fahrplan: {scheduled}/{cycle} Plaetze belegt, {n - scheduled} in Reserve")
 
 
 def prune(path=OUT):

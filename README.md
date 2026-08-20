@@ -8,7 +8,7 @@ mindestens ein Pangramm (ein Wort, das alle neun Buchstaben nutzt). Pro Tag
 gibt es ein Rätsel; die letzten sieben Tage lassen sich nachspielen. Punkte
 folgen den Buchstabenwerten des deutschen Scrabble.
 
-Der komplette Rätselpool (~2700 Rätsel) **und** die Worterklärungen sind in die
+Der komplette Rätselpool (2500 Rätsel) **und** die Worterklärungen sind in die
 App eingebaut — sie braucht keine Internetverbindung und fordert **keine einzige
 Berechtigung** an. Tippt man ein Wort der Lösungsliste an, steht die Erklärung
 sofort da, aus de.wiktionary.org, gekürzt und mitgeliefert.

@@ -3,7 +3,7 @@ Wortmühle ("word mill") is a daily German word puzzle: build as many German wor
 Features:
 
 • One new puzzle every day, with the last seven days replayable
-• ~2700 puzzles built in — works fully offline
+• 2500 puzzles built in — one a day for almost seven years, fully offline
 • Scoring based on German Scrabble letter values, with a pangram bonus
 • Tap a found word for its definition — bundled, no network needed
 • Light/dark mode selectable (follows the system otherwise)
