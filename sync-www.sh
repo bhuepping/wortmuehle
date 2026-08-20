@@ -14,7 +14,7 @@ cp "$PIG/static/wortmuehle.css" "$APP/www/wortmuehle.css"
 cp "$PIG/static/wortmuehle.js"  "$APP/www/wortmuehle.js"
 
 # Pool-Generator verbatim mitspiegeln (Transparenz/Provenienz; kanonisch bleibt $GEN)
-cp "$GEN/build_db.py" "$GEN/blacklist.txt" "$GEN/extra_words.txt" "$APP/tools/pool-generator/"
+cp "$GEN/build_db.py" "$GEN/blacklist.txt" "$GEN/extra_words.txt" "$GEN/SOURCES.md" "$APP/tools/pool-generator/"
 { echo "# NUR EIN SPIEGEL — bearbeite piGallery/data/wortmuehle_tabu.txt, nicht diese Datei."
   cat "$PIG/data/wortmuehle_tabu.txt"; } > "$APP/tools/pool-generator/wortmuehle_tabu.txt"
 
