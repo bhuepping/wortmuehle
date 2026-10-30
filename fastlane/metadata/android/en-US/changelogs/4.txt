@@ -1,0 +1,4 @@
+• Second daily puzzle with 8 letters (9 | 8 switch)
+• Own letter values (1–4), pangram bonus 20
+• Clearer score bar: points/max, green from 50 %
+• Some proper names removed from the word list — some daily puzzles change

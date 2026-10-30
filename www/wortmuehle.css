@@ -9,8 +9,9 @@
   --text:   #2b2015;
   --muted:  #8a7860;
   --border: #e4d5bd;
-  --tile:   #f1e6d3;
-  --tile-edge: #dbc7a3;
+  --tile:   #ead2a8;
+  --tile-edge: #bf9a5e;
+  --tile-hi: rgba(255,255,255,.45);
   --accent: #c1622f;   /* Terrakotta / Mühleisen */
   --accent-ink: #fff3e8;
   --center: #d98a4f;   /* Getreide-Ton für die Mitte */
@@ -27,8 +28,9 @@
     --text:   #f0e6d6;
     --muted:  #a89d8a;
     --border: #3b3122;
-    --tile:   #2b2318;
-    --tile-edge: #40331f;
+    --tile:   #35291a;
+    --tile-edge: #4d3b21;
+    --tile-hi: rgba(255,255,255,.08);
     --accent: #d98a4f;
     --accent-ink: #2a1404;
     --center: #e0954f;
@@ -49,8 +51,9 @@
   --text:   #2b2015;
   --muted:  #8a7860;
   --border: #e4d5bd;
-  --tile:   #f1e6d3;
-  --tile-edge: #dbc7a3;
+  --tile:   #ead2a8;
+  --tile-edge: #bf9a5e;
+  --tile-hi: rgba(255,255,255,.45);
   --accent: #c1622f;
   --accent-ink: #fff3e8;
   --center: #d98a4f;
@@ -66,8 +69,9 @@
   --text:   #f0e6d6;
   --muted:  #a89d8a;
   --border: #3b3122;
-  --tile:   #2b2318;
-  --tile-edge: #40331f;
+  --tile:   #35291a;
+  --tile-edge: #4d3b21;
+  --tile-hi: rgba(255,255,255,.08);
   --accent: #d98a4f;
   --accent-ink: #2a1404;
   --center: #e0954f;
@@ -93,25 +97,27 @@ html, body {
 }
 
 /* ── Kopf ─────────────────────────────────────────────────────────────────── */
-.top { width: 100%; display: flex; align-items: center; gap: 10px; }
-.top h1 { flex: 1; text-align: center; font-size: 1.25rem; margin: 0; letter-spacing: .5px; }
-.back {
-  border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  border-radius: 12px; padding: 7px 12px; font-size: .95rem; cursor: pointer;
-  text-decoration: none; line-height: 1;
+.top { --ctl: 40px; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; }   /* schmale Zeile unter dem raspi5-Kopf */
+/* Umschalter 9 / 8 Buchstaben */
+.modeseg { flex: none; display: flex; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  box-sizing: border-box; height: var(--ctl); padding: 0; }   /* Segmente füllen den Rahmen ganz aus */
+.modeseg button {
+  border: none; background: var(--surface); color: var(--text); cursor: pointer;
+  padding: 0; min-width: 38px; height: 100%; font-size: .95rem; line-height: 1; font-weight: 600;
 }
-.back:active { transform: translateY(1px); }
+.modeseg button + button { border-left: 1px solid var(--border); }
+.modeseg button.sel { background: var(--accent); color: var(--accent-ink); font-weight: 800; }
 
 /* Datum-Auswahl (rechts im Header, hält zugleich den Titel mittig) */
-.datewrap { position: relative; min-width: 38px; display: flex; justify-content: flex-end; gap: 6px; }
+.datewrap { flex: none; position: relative; min-width: 38px; display: flex; justify-content: flex-end; gap: 6px; }
 .gearbtn {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  border-radius: 12px; padding: 7px 9px; font-size: .85rem; cursor: pointer; line-height: 1;
+  border-radius: 12px; padding: 0 11px; height: var(--ctl); box-sizing: border-box; font-size: .85rem; cursor: pointer; line-height: 1;
 }
 .gearbtn:active { transform: translateY(1px); }
 .datebtn {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  border-radius: 12px; padding: 7px 10px; font-size: .85rem; cursor: pointer;
+  border-radius: 12px; padding: 0 10px; height: var(--ctl); box-sizing: border-box; font-size: .85rem; cursor: pointer;
   line-height: 1; white-space: nowrap;
 }
 .datebtn:active { transform: translateY(1px); }
@@ -131,10 +137,20 @@ html, body {
 .dateopt.off::after { content: ' ⤓'; font-size: .8em; opacity: .7; }
 .dateopt.sel { background: var(--accent); color: var(--accent-ink); }
 
-/* ── Statistik ────────────────────────────────────────────────────────────── */
-.stats { width: 100%; display: flex; justify-content: space-around; gap: 8px;
-  font-size: .9rem; color: var(--muted); }
-.stats b { color: var(--text); font-variant-numeric: tabular-nums; }
+/* ── Fortschrittsbalken (Punkte/Max), Kerben bei 25/50/75 %, ab 50 % grün ── */
+.pbar { flex: 1; min-width: 40px; height: var(--ctl); box-sizing: border-box; position: relative; cursor: pointer;
+  background: var(--tile); border: 1px solid var(--tile-edge); border-radius: 12px; overflow: hidden; }   /* gleiche Höhe + Rundung wie die Knöpfe */
+.pfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 11px;
+  background: var(--accent); background: color-mix(in srgb, var(--accent) 55%, var(--tile));
+  transition: width .5s cubic-bezier(.3,.7,.3,1), background .8s; }
+.pbar.half .pfill { background: var(--good); background: color-mix(in srgb, var(--good) 55%, var(--tile)); }
+.pbar u { position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--tile-edge); opacity: .6; transition: opacity .4s; }
+.pbar u:nth-of-type(2) { width: 2px; margin-left: -1px; opacity: .9; }   /* 50 % = das Ziel */
+.pbar u.hit { opacity: .25; }
+.pnum { position: absolute; right: 7px; top: 0; bottom: 0; display: flex; align-items: center;
+  font-size: .8rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums;
+  pointer-events: none; }
 
 /* ── aktuelles Wort ───────────────────────────────────────────────────────── */
 .current {
@@ -143,6 +159,9 @@ html, body {
 }
 .current .caret { width: 2px; height: 1.6rem; background: var(--accent);
   animation: blink 1s steps(2) infinite; }
+.current { position: relative; width: 100%; justify-content: center; }
+.current .curval { position: absolute; right: 0; font-size: .8rem; font-weight: 600; letter-spacing: 0;
+  color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .current .miss { color: var(--accent); }   /* Mittelbuchstabe im Tipp-Wort */
 @keyframes blink { 50% { opacity: 0; } }
 
@@ -161,19 +180,32 @@ html, body {
 .hive.turning { animation: millturn .55s ease-in-out; }
 @keyframes millturn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .cell {
-  width: 100%; height: 100%; border: none; cursor: pointer;
-  background: var(--tile); color: var(--text); border-radius: 14px;
+  position: relative; width: 100%; height: 100%; border: none; cursor: pointer;
+  background: linear-gradient(180deg, var(--tile-hi), rgba(255,255,255,0) 65%), var(--tile);
+  color: var(--text); border-radius: 14px;
   font-size: clamp(1.2rem, 7vw, 1.9rem); font-weight: 800;   /* Großschreibung macht das JS (ß→ẞ) */
   display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 -4px 0 var(--tile-edge);
-  transition: transform .06s, opacity .12s;
+  box-shadow: inset 0 -6px 0 var(--tile-edge), 0 1px 2px rgba(0,0,0,.15);
+  transition: transform .06s, box-shadow .06s, opacity .12s;
 }
 .cell > span { display: block; }
-.cell:active { transform: scale(.92); }
-.cell.center, .cell.center:active {
-  background: var(--center); color: var(--center-ink);
-  box-shadow: inset 0 -4px 0 rgba(0,0,0,.18);
+.cell .v {                                       /* Punktwert: klein, blass, unten rechts */
+  position: absolute; right: 8px; bottom: 9px; font-style: normal;
+  font-size: .8rem; font-weight: 600; line-height: 1; opacity: .55;
 }
+.cell:active { transform: translateY(2px); box-shadow: inset 0 -3px 0 var(--tile-edge), 0 0 1px rgba(0,0,0,.15); }
+.cell.center, .cell.center:active {
+  background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,0) 65%), var(--center);
+  color: var(--center-ink);
+  box-shadow: inset 0 -6px 0 rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.2);
+}
+.cell.center:active { transform: translateY(2px); box-shadow: inset 0 -3px 0 rgba(0,0,0,.2), 0 0 1px rgba(0,0,0,.2); }
+/* 8er: neuntes Feld = Mischen-Knopf (Umriss statt Stein, damit er nicht als Buchstabe gilt) */
+.cell.shufcell, .cell.shufcell:active {
+  background: transparent; color: var(--accent); border: 2px dashed var(--accent);
+  box-shadow: none; font-size: clamp(1.4rem, 8vw, 2.2rem);
+}
+.cell.shufcell:active { transform: translateY(2px); }
 .cell.used { opacity: .3; pointer-events: none; box-shadow: none; }   /* benutzter Stein gesperrt */
 
 /* ── Steuerung ────────────────────────────────────────────────────────────── */

@@ -2,13 +2,13 @@
 
 Ein tägliches deutsches Wort-Puzzle für Android — vollständig offline.
 
-Aus neun Buchstaben auf der 3×3-Mühle gilt es, möglichst viele deutsche Wörter
+Aus neun (oder acht) Buchstaben auf der 3×3-Mühle gilt es, möglichst viele deutsche Wörter
 zu legen. Jedes Wort muss den Mittelbuchstaben enthalten; jedes Rätsel hat
-mindestens ein Pangramm (ein Wort, das alle neun Buchstaben nutzt). Pro Tag
-gibt es ein Rätsel; die letzten sieben Tage lassen sich nachspielen. Punkte
-folgen den Buchstabenwerten des deutschen Scrabble.
+mindestens ein Pangramm (ein Wort, das alle Buchstaben nutzt). Pro Tag
+gibt es ein Rätsel je Modus (9 | 8); die letzten sieben Tage lassen sich nachspielen. Punkte
+nutzen eigene Buchstabenwerte (1–4), Pangramm-Bonus 20.
 
-Der komplette Rätselpool (2500 Rätsel) **und** die Worterklärungen sind in die
+Der komplette Rätselpool (2500 Neun- und 3000 Acht-Buchstaben-Rätsel) **und** die Worterklärungen sind in die
 App eingebaut — sie braucht keine Internetverbindung und fordert **keine einzige
 Berechtigung** an. Tippt man ein Wort der Lösungsliste an, steht die Erklärung
 sofort da, aus de.wiktionary.org, gekürzt und mitgeliefert.

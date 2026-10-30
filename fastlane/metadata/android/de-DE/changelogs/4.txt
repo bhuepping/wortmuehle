@@ -1,0 +1,4 @@
+• Zweites Tagesrätsel mit 8 Buchstaben (Umschalter 9 | 8)
+• Eigene Buchstabenwerte (1–4), Pangramm-Bonus 20
+• Klarere Punkteleiste: Punkte/Maximum, ab 50 % grün
+• Einige Eigennamen aus der Wortliste entfernt — manche Tagesrätsel ändern sich

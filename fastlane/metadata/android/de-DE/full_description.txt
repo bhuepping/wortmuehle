@@ -1,10 +1,10 @@
-Wortmühle ist ein tägliches Wort-Puzzle: Aus neun Buchstaben auf der 3×3-Mühle legst du möglichst viele deutsche Wörter. Jedes Wort muss den Mittelbuchstaben enthalten, und in jedem Rätsel steckt mindestens ein Pangramm — ein Wort, das alle neun Buchstaben verwendet.
+Wortmühle ist ein tägliches Wort-Puzzle: Aus neun (oder acht) Buchstaben auf der 3×3-Mühle legst du möglichst viele deutsche Wörter. Jedes Wort muss den Mittelbuchstaben enthalten, und in jedem Rätsel steckt mindestens ein Pangramm — ein Wort, das alle Buchstaben verwendet.
 
 Merkmale:
 
 • Jeden Tag ein neues Rätsel, die letzten sieben Tage lassen sich nachspielen
-• 2500 Rätsel fest eingebaut — eines pro Tag, fast sieben Jahre lang, vollständig offline
-• Punktewertung nach den Buchstabenwerten des deutschen Scrabble, Pangramm-Bonus
+• Zwei Tagesrätsel: 9 und 8 Buchstaben — 2500 Neun- und 3000 Acht-Buchstaben-Rätsel fest eingebaut, vollständig offline
+• Punktewertung mit eigenen Buchstabenwerten (1–4), Pangramm-Bonus
 • Worterklärungen per Antippen — eingebaut, ohne Netz
 • Hell/Dunkel-Modus wählbar (folgt sonst dem System)
 • Keine Berechtigungen, kein Tracking, keine Werbung, keine Konten, keine Google-Dienste

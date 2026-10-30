@@ -31,16 +31,18 @@ Usage:
     python3 build_db.py decide         # rebuild word_decision (cheap, re-run freely)
     python3 build_db.py why <word>     # explain a word's lineage + verdict
     python3 build_db.py report         # counts per source / reason
+    python3 build_db.py mart8          # 8er-Tagesrätsel -> wortmuehle_pool8.json
     python3 build_db.py prune          # Tabuliste erneut auf den fertigen Pool anwenden
     python3 build_db.py defs           # Worterklärungen -> word_meaning + wortmuehle_defs.json
 """
-import os, re, sys, bz2, sqlite3, subprocess, glob, json, time, hashlib, html
+import os, re, sys, bz2, sqlite3, subprocess, glob, json, time, hashlib, html, datetime
 from collections import Counter
 
 BASE  = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(BASE, ".cache")
 DB    = os.path.join(CACHE, "wortmuehle.db")
 OUT   = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_pool.json"))
+OUT8  = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_pool8.json"))
 TABU  = os.path.normpath(os.path.join(BASE, "..", "piGallery", "data", "wortmuehle_tabu.txt"))
 
 MIN_LEN = 3
@@ -49,25 +51,15 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyzäöüß"
 ALLOWED  = set(ALPHABET)
 BIT      = {c: 1 << i for i, c in enumerate(ALPHABET)}
 
-# Standard German-language Scrabble letter values (official tile distribution).
-# ß has no tile of its own in German Scrabble (words use "ss" on the board), so it's
-# priced as ss (1+1) here — the game's alphabet includes it, Scrabble's doesn't.
-LETTER_VALUE = {
-    'e': 1, 'n': 1, 's': 1, 'i': 1, 'r': 1, 't': 1, 'u': 1, 'a': 1, 'd': 1,
-    'h': 2, 'g': 2, 'l': 2, 'o': 2,
-    'm': 3, 'b': 3, 'w': 3, 'z': 3,
-    'c': 4, 'f': 4, 'k': 4, 'p': 4,
-    'ä': 6, 'j': 6, 'ü': 6, 'v': 6,
-    'ö': 8, 'x': 8,
-    'q': 10, 'y': 10,
-    'ß': 2,
-}
-BINGO_BONUS = 50                  # Scrabble's flat bonus for using the whole rack; here,
-                                  # "the whole rack" = all 9 tiles = a pangram.
+# Eigene Werte: Quartile der Buchstabenhäufigkeit im Pool (1 = häufigste). Muss mit
+# LETTER_VALUE/PANGRAM_BONUS in piGallery/static/wortmuehle.js übereinstimmen.
+LETTER_VALUE = {c: v for v, cs in ((1, "etnrsail"), (2, "hguobck"), (3, "mdfpzwä"),
+                                   (4, "vüößjyxq")) for c in cs}
+PANGRAM_BONUS = 20                # Bonus fürs Pangramm (alle Steine)
 
 
-def word_score(w):
-    return sum(LETTER_VALUE.get(c, 0) for c in w.lower()) + (BINGO_BONUS if len(w) == TILES else 0)
+def word_score(w, tiles=TILES):
+    return sum(LETTER_VALUE.get(c, 0) for c in w.lower()) + (PANGRAM_BONUS if len(w) == tiles else 0)
 
 
 # mart (puzzle) parameters
@@ -80,7 +72,15 @@ CYCLE = 2500                      # Länge des Tages-Fahrplans. EINMAL festgeleg
                                   #   kleiner als der Pool — die Differenz ist die Reserve, aus
                                   #   der frei gewordene Plätze nachbesetzt werden. 2500 Tage
                                   #   sind knapp sieben Jahre, dann beginnt der Zyklus von vorn.
-POOL_SCHEMA = 5                   # 5: one puzzle/day (no difficulty tiers), Scrabble letter
+CYCLE8 = 3000                     # dasselbe für das 8er-Rätsel (eigener Pool, eigener Fahrplan,
+                                  #   ebenfalls EINMAL festgelegt und eingefroren).
+FROZEN_FROM  = "2026-08-20"       # Festschreibung: Die Fahrplan-Plätze der Tage FROZEN_FROM …
+FROZEN_UNTIL = "2026-11-13"       #   FROZEN_UNTIL behalten ihr bisheriges Rätsel bitgenau, auch
+                                  #   wenn neue Blacklist-Einträge Wörter daraus streichen würden.
+                                  #   Grund: Namensrunde 2 (2026-10-19), Bjoern wollte die Tage bis
+                                  #   zum 13.11. unverändert lassen. FROZEN_FROM = Start des Fahrplans.
+                                  #   Gilt nur fürs 9er (das 8er war erst seit dem Tag live).
+POOL_SCHEMA = 5                   # 5: one puzzle/day (no difficulty tiers), own letter
                                   #    scoring. Full pool shipped to the Pi; the Flask server
                                   #    slices the rolling day-window per request.
 
@@ -577,7 +577,7 @@ def tabu_report(dropped, total):
 
 # ── MART (puzzles + JSON export, reads the accepted dictionary) ──────────────
 
-def assign_seq(puzzles):
+def assign_seq(puzzles, out=None, cycle_const=None, taken=()):
     """Jedem Rätsel seinen festen Platz im Fahrplan geben.
 
     Der Tag wählt sein Rätsel über `seq == Tag mod cycle`. Damit sich Tage bei einem
@@ -589,13 +589,15 @@ def assign_seq(puzzles):
     werden nicht ausgeliefert. Reicht die Reserve nicht, bleibt ein Platz leer — dann
     meldet das der Aufrufer, statt still den Zyklus zu verkürzen.
     """
+    out = out or OUT
+    CYC = cycle_const or CYCLE
     ids = [p["id"] for p in puzzles]
     id_set = set(ids)
     alt = {}
     cycle = None
-    if os.path.exists(OUT):
+    if os.path.exists(out):
         try:
-            vorher = json.load(open(OUT, encoding="utf-8"))
+            vorher = json.load(open(out, encoding="utf-8"))
             cycle = vorher.get("meta", {}).get("cycle")
             for q in vorher["puzzles"]:
                 if q.get("seq") is not None:
@@ -604,21 +606,22 @@ def assign_seq(puzzles):
             print(f"· Fahrplan: alter Pool nicht lesbar ({e}) — lege neu an")
 
     if cycle is None:                      # Erstanlage
-        cycle = CYCLE
+        cycle = CYC
         if len(ids) < cycle:
-            raise SystemExit(f"Pool hat nur {len(ids)} Rätsel, CYCLE={cycle} — zu wenig.")
+            raise SystemExit(f"Pool hat nur {len(ids)} Rätsel, CYC={cycle} — zu wenig.")
         erst = {i: k for k, i in enumerate(ids[:cycle])}
         for i in ids[cycle:]:
             erst[i] = None
         print(f"· Fahrplan wird angelegt: cycle={cycle} (ab jetzt unveränderlich), "
               f"{len(ids) - cycle} Rätsel auf der Reserve")
         return erst, cycle
-    if cycle != CYCLE:
-        print(f"· Hinweis: Fahrplan läuft mit cycle={cycle}, Konstante sagt {CYCLE} — "
+    if cycle != CYC:
+        print(f"· Hinweis: Fahrplan läuft mit cycle={cycle}, Konstante sagt {CYC} — "
               f"der Fahrplan gewinnt, sonst würden sich alle Tage verschieben.")
 
     seq_by_id = {i: alt[i] for i in ids if i in alt and alt[i] < cycle}
-    belegt = set(seq_by_id.values())
+    seq_by_id = {i: k for i, k in seq_by_id.items() if k not in taken}
+    belegt = set(seq_by_id.values()) | set(taken)
     frei = [k for k in range(cycle) if k not in belegt]
     neu = [i for i in ids if i not in seq_by_id]           # neue + heimatlose Rätsel
     for i in ids:
@@ -632,27 +635,45 @@ def assign_seq(puzzles):
     return seq_by_id, cycle
 
 
-def mart(con):
+def mart(con, tiles=TILES):
+    """Pool bauen. tiles=9: das bisherige Tagesrätsel (Ausgabe bit-genau wie früher),
+    tiles=8: eigener Pool/Fahrplan (wortmuehle_pool8.json, IDs mit Präfix \"x\")."""
+    out = OUT if tiles == TILES else OUT8
+    cyc = CYCLE if tiles == TILES else CYCLE8
     tabu, tabu_dropped = load_tabu(), Counter()
     # accepted play dictionary: one entry per lower_form with its display spelling
     sols = []
     for lf, canon in con.execute("""SELECT DISTINCT w.lower_form, w.canonical
             FROM word w JOIN word_decision d ON d.surface = w.surface WHERE d.accepted = 1"""):
-        if MIN_LEN <= len(lf) <= TILES:
+        if MIN_LEN <= len(lf) <= tiles:
             sols.append((lf, mask(lf), Counter(lf), canon or lf))
 
     # seeds = frequency-core 9-letter wngerman words, deduped by letter signature
     wn_lower = {r[0].lower() for r in con.execute("SELECT surface FROM stg_wngerman")}
     seeds = {}
     for (surface,) in con.execute("SELECT surface FROM stg_freq WHERE rank < ?", (TOPN,)):
-        if len(surface) == TILES and set(surface) <= ALLOWED and surface in wn_lower:
+        if len(surface) == tiles and set(surface) <= ALLOWED and surface in wn_lower:
             seeds.setdefault("".join(sorted(surface)), surface)
     # whitelisted 9-letter words seed a puzzle too — "Gewinnt immer" (extra_words.txt)
     # also means: no frequency rank or wngerman entry required to carry a rack
     for (lf,) in con.execute("SELECT lower_form FROM stg_manual WHERE action='include'"):
-        if len(lf) == TILES and set(lf) <= ALLOWED:
+        if len(lf) == tiles and set(lf) <= ALLOWED:
             seeds.setdefault("".join(sorted(lf)), lf)
     print(f"· mart: dict={len(sols)} seeds={len(seeds)}")
+
+    # bisheriger Pool: Mitte je Signatur (bleibt, solange sie passt → ID und Tag bleiben) und
+    # die festgeschriebenen Plätze (FROZEN_FROM … FROZEN_UNTIL)
+    old_center, frozen = {}, {}
+    if os.path.exists(out):
+        vorher = json.load(open(out, encoding="utf-8"))
+        ocyc = vorher["meta"]["cycle"]
+        d0 = datetime.date.fromisoformat(FROZEN_FROM).toordinal() - datetime.date(1970, 1, 1).toordinal()
+        d1 = datetime.date.fromisoformat(FROZEN_UNTIL).toordinal() - datetime.date(1970, 1, 1).toordinal()
+        slots = {d % ocyc for d in range(d0, d1 + 1)}
+        for q in vorher["puzzles"]:
+            old_center["".join(q["tiles"])] = q["center"]
+            if tiles == TILES and q.get("seq") in slots:   # nur 9er; das 8er startete erst am 19.10.
+                frozen[q["seq"]] = q
 
     puzzles = []
     for i, (sig, seed) in enumerate(seeds.items()):
@@ -664,7 +685,12 @@ def mart(con):
         if not cands:
             continue
         best = None                                   # center: solution count in BAND, nearest TARGET
-        for ch in sorted(set(seed)):
+        oc = old_center.get(sig)                      # bisherige Mitte zuerst: passt sie, bleibt sie
+        if oc and oc in seed:
+            ws = [x for x in cands if oc in x[0]]
+            if BAND[0] <= len(ws) <= BAND[1] and any(len(lf) == tiles for lf, _ in ws):
+                best = (0, oc, ws)
+        for ch in ([] if best else sorted(set(seed))):
             ws = [x for x in cands if ch in x[0]]
             n = len(ws)
             if BAND[0] <= n <= BAND[1] and (best is None or abs(n - TARGET) < best[0]):
@@ -673,7 +699,7 @@ def mart(con):
             continue
         _, center, wlist = best
         words = sorted({canon for (_lf, canon) in wlist}, key=str.lower)
-        pangrams = [w for w in words if len(w) == TILES]
+        pangrams = [w for w in words if len(w) == tiles]
         if not pangrams:      # Namensfilter/Blacklist kann das Seed-Wort entfernt haben
             continue          # → Rätsel ohne findbares Pangramm nie ausliefern
         hits = tabu_hits(words, tabu)
@@ -683,18 +709,25 @@ def mart(con):
         puzzles.append({
             "sig": sig, "tiles": sorted(seed), "center": center, "words": words,
             "pangrams": pangrams,
-            "maxScore": sum(word_score(w) for w in words),
+            "maxScore": sum(word_score(w, tiles) for w in words),
         })
 
     tabu_report(tabu_dropped, sum(tabu_dropped.values()) + len(puzzles))
 
     for p in puzzles:
-        p["id"] = hashlib.sha1((p["sig"] + p["center"]).encode()).hexdigest()[:8]
+        p["id"] = ("" if tiles == TILES else "x") + hashlib.sha1((p["sig"] + p["center"]).encode()).hexdigest()[:8]
+    frozen_ids = {q["id"] for q in frozen.values()}
+    frozen_sigs = {"".join(q["tiles"]) for q in frozen.values()}
+    puzzles = [p for p in puzzles if p["id"] not in frozen_ids and p["sig"] not in frozen_sigs]
+    for q in frozen.values():
+        puzzles.append({"sig": "".join(q["tiles"]), "tiles": q["tiles"], "center": q["center"],
+                        "words": q["words"], "pangrams": q["pangrams"], "id": q["id"],
+                        "maxScore": sum(word_score(w, tiles) for w in q["words"])})
     n = len(puzzles)
 
     # write back to the mart tables (auditable), then export JSON from the in-memory set
-    con.execute("DELETE FROM puzzle")
-    con.execute("DELETE FROM puzzle_word")
+    con.execute("DELETE FROM puzzle_word WHERE puzzle_id IN (SELECT id FROM puzzle WHERE length(tiles) = ?)", (tiles,))
+    con.execute("DELETE FROM puzzle WHERE length(tiles) = ?", (tiles,))
     con.executemany("""INSERT INTO puzzle(id, signature, tiles, center, difficulty, max_score, word_count)
                        VALUES (?,?,?,?,0,?,?)""",
                     [(p["id"], p["sig"], "".join(p["tiles"]), p["center"],
@@ -704,7 +737,10 @@ def mart(con):
     con.commit()
 
     puzzles.sort(key=lambda p: p["id"])     # nur noch die Ausgangsordnung für neue Rätsel
-    seq_by_id, cycle = assign_seq(puzzles)
+    seq_by_id, cycle = assign_seq([p for p in puzzles if p["id"] not in frozen_ids], out, cyc,
+                                  taken=set(frozen))
+    seq_by_id.update({q["id"]: k for k, q in frozen.items()})
+    print(f"· Festschreibung {FROZEN_FROM} … {FROZEN_UNTIL}: {len(frozen)} Plätze unverändert")
 
     # Ship the FULL pool to the Pi as data. The Flask server keeps these in memory and slices
     # the rolling day-window per request (today-7 … today+21) via `day % len(rotation)`,
@@ -724,12 +760,12 @@ def mart(con):
                      "pangrams": p["pangrams"], "maxScore": p["maxScore"],
                      "id": p["id"], "seq": seq_by_id[p["id"]]} for p in puzzles],
     }
-    with open(OUT, "w", encoding="utf-8") as f:
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(pool, f, ensure_ascii=False, separators=(",", ":"))
-    size = os.path.getsize(OUT)
+    size = os.path.getsize(out)
     med = sorted(len(p["words"]) for p in puzzles)[n // 2] if n else 0
     uml = sum(1 for p in puzzles if any(c in "äöüß" for c in p["tiles"]))
-    print(f"· wrote {OUT}")
+    print(f"· wrote {out}")
     print(f"  pool={n}  median_words={med}  umlaut_racks={uml}  size={size/1024:.0f} KiB")
     print(f"  Fahrplan: {scheduled}/{cycle} Plaetze belegt, {n - scheduled} in Reserve")
 
@@ -889,6 +925,8 @@ def main():
         decide(con)
     elif cmd == "mart":
         mart(con)
+    elif cmd == "mart8":
+        mart(con, 8)
     elif cmd == "prune":
         prune()
     elif cmd == "defs":

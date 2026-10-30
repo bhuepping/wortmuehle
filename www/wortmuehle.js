@@ -2,8 +2,8 @@
  *
  * 9 Steine (3×3-Mühle) = Buchstaben-Multimenge eines 9-Buchstaben-Wortes; jeder Stein
  * pro Wort höchstens einmal; der hervorgehobene Mittelstein muss vorkommen; Wortlänge 3..9.
- * Punkte: Scrabble-Buchstabenwerte (deutsches Scrabble); Pangramm (Länge 9, alle Steine)
- * bekommt zusätzlich Scrabbles "Bingo"-Bonus (+50, wie für ein volles Regal).
+ * Punkte: eigene Buchstabenwerte (s. LETTER_VALUE); Pangramm (Länge = alle Steine)
+ * bekommt zusätzlich PANGRAM_BONUS (+20).
  *
  * Tagesrätsel: pro Tag genau ein festes Rätsel, deterministisch aus dem Datum gewählt
  * (stabil über Wort-Updates). Eingabe per Antippen der Steine (benutzte Steine werden
@@ -17,26 +17,28 @@
   var WIN_KEY = 'wortmuehle.window';                      // gecachtes Deploy-Fenster (offline spielbar)
   var KEEP_DAYS = 7;                                      // == Länge des wählbaren Datumsfensters (s. u.)
   var MINLEN = 3;
-  // Deutsches Scrabble: offizielle Buchstabenwerte. ß hat keinen eigenen Stein im
-  // echten Spiel (wird als "ss" gelegt) — hier als ss-Ersatz (1+1) bepreist.
+  // Eigene Werte: Quartile der Buchstabenhäufigkeit im Pool
   var LETTER_VALUE = {
-    e: 1, n: 1, s: 1, i: 1, r: 1, t: 1, u: 1, a: 1, d: 1,
-    h: 2, g: 2, l: 2, o: 2,
-    m: 3, b: 3, w: 3, z: 3,
-    c: 4, f: 4, k: 4, p: 4,
-    ä: 6, j: 6, ü: 6, v: 6,
-    ö: 8, x: 8,
-    q: 10, y: 10,
-    ß: 2
+    e: 1, t: 1, n: 1, r: 1, s: 1, a: 1, i: 1, l: 1,
+    h: 2, g: 2, u: 2, o: 2, b: 2, c: 2, k: 2,
+    m: 3, d: 3, f: 3, p: 3, z: 3, w: 3, ä: 3,
+    v: 4, ü: 4, ö: 4, ß: 4, j: 4, y: 4, x: 4, q: 4
   };
-  var BINGO_BONUS = 50;   // Scrabbles Bonus fürs volle Regal; hier: alle 9 Steine (Pangramm)
-  function scoreWord(w) {
+  var PANGRAM_BONUS = 20;   // alle Steine verbaut
+  function nTiles() { return puzzle ? puzzle.tiles.length : 9; }   // 9 oder 8 Steine
+  function letterSum(w) {
     w = w.toLowerCase();
     var pts = 0;
     for (var i = 0; i < w.length; i++) pts += LETTER_VALUE[w[i]] || 0;
-    return pts + (w.length === 9 ? BINGO_BONUS : 0);
+    return pts;
   }
-  var byId = {}, byDay = {}, allLoaded = [];
+  function scoreWord(w) { return letterSum(w) + (w.length === nTiles() ? PANGRAM_BONUS : 0); }
+  // Zwei Tagesrätsel: 9er (wie bisher) und 8er (eigener Pool, IDs mit "x"-Präfix). Je Modus
+  // ein eigenes Tagesfenster; byId gilt für beide (IDs kollidieren nie).
+  var MODE_KEY = 'wortmuehle.mode';
+  var mode = 9;
+  try { if (localStorage.getItem(MODE_KEY) === '8') mode = 8; } catch (e) {}
+  var byId = {}, byDay = { 9: {}, 8: {} }, allLoaded = { 9: [], 8: [] };
   var selectedDay = 0;                                    // aktuell gewählter Tag (dayNum); 0 = noch nicht gesetzt
   var puzzle = null, canon = {}, found = new Set(), ended = false;
   var layout = [], cellEls = [], inputIdx = [];          // layout[0] = hervorgehobene Mitte
@@ -64,7 +66,7 @@
   applyTheme();
 
   var $ = function (id) { return document.getElementById(id); };
-  var hive = $('hive'), current = $('current'), statsEl = $('stats'),
+  var hive = $('hive'), current = $('current'), pbar = $('pbar'), pfill = $('pfill'), pnum = $('pnum'), detail = '',
       foundEl = $('found'), toastEl = $('toast'), defpop = $('defpop');
 
   function todayStr() {
@@ -76,15 +78,15 @@
     return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
   }
   function puzzleFor(day) {                              // Rätsel, das für `day` ansteht
-    if (byDay[day]) return byDay[day];
-    // Offline-Build: voller Pool ohne day-Stempel → gleiche Rotation wie der Server
-    // (sortiert nach id, dann day % len) liefert dasselbe Tagesrätsel, jeden Tag, ohne Netz.
-    if (!allLoaded.length) return null;
-    var p = allLoaded[((day % allLoaded.length) + allLoaded.length) % allLoaded.length];
-    return Object.assign({}, p, { day: day });           // Datumsleiste/Permalink folgen dem Tag
+    if (byDay[mode][day]) return byDay[mode][day];
+    // Offline-Build: voller Fahrplan ohne day-Stempel → gleiche Rotation wie der Server
+    // (seq-Reihenfolge, day % len) liefert dasselbe Tagesrätsel, jeden Tag, ohne Netz.
+    var all = allLoaded[mode];
+    if (!all.length) return null;
+    return Object.assign({}, all[((day % all.length) + all.length) % all.length], { day: day });  // Datumsleiste/Permalink folgen dem Tag
   }
   function dayLoaded(day) {                              // Offline-Build: voller Pool → jeder Tag spielbar
-    return (day in byDay) || allLoaded.length > 0;
+    return (day in byDay[mode]) || allLoaded[mode].length > 0;
   }
   function dateLabel(day) {
     var t = dayNum();
@@ -96,28 +98,33 @@
   }
 
   // ── Deploy-Fenster laden (Cache zuerst → offline spielbar, dann frisch vom Pi) ──
-  function applyPool(pool) {
-    byId = {}; byDay = {}; allLoaded = [];
+  function applyPool(pool, n) {
+    byDay[n] = {}; allLoaded[n] = [];
     pool.puzzles.forEach(function (p) {
-      byId[p.id] = p; allLoaded.push(p);
-      if (typeof p.day === 'number') byDay[p.day] = p;
+      byId[p.id] = p; allLoaded[n].push(p);
+      if (typeof p.day === 'number') byDay[n][p.day] = p;
     });
   }
-  function loadWindow() {                                // frisch vom Pi holen + cachen
-    return fetch(window.POOL_URL, { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (pool) {
-        applyPool(pool);
-        try { localStorage.setItem(WIN_KEY, JSON.stringify(pool)); } catch (e) {}
-        return pool;
-      });
+  function loadWindow() {                                // beide Fenster frisch vom Pi holen + cachen
+    return Promise.all([9, 8].map(function (n) {
+      return fetch(n === 8 ? window.POOL8_URL : window.POOL_URL, { cache: 'no-store' })   // Offline-Build: lokale Dateien
+        .then(function (r) { return r.json(); })
+        .then(function (pool) {
+          applyPool(pool, n);
+          try { localStorage.setItem(WIN_KEY + (n === 8 ? '8' : ''), JSON.stringify(pool)); } catch (e) {}
+          return pool;
+        });
+    }));
   }
   function loadCachedWindow() {                          // sofort aus localStorage (kann offline sein)
+    return false;                                        // Offline-Build: Pool liegt im APK, alter Cache soll ihn nie überdecken
     try {
       var s = localStorage.getItem(WIN_KEY);
       if (!s) return false;
-      applyPool(JSON.parse(s));
-      return true;
+      applyPool(JSON.parse(s), 9);
+      var s8 = localStorage.getItem(WIN_KEY + '8');
+      if (s8) applyPool(JSON.parse(s8), 8);
+      return mode === 9 || !!s8;                         // 8er noch nie geladen → erst frisch holen
     } catch (e) { return false; }
   }
 
@@ -174,12 +181,13 @@
       var q = puzzleFor(selectedDay);
       if (q) { startPuzzle(q); return; }
       // Notnagel für heute: irgendeins (Pool veraltet)
-      if (selectedDay === dayNum() && allLoaded.length) startPuzzle(allLoaded[dayNum() % allLoaded.length]);
+      if (selectedDay === dayNum() && allLoaded[mode].length) startPuzzle(allLoaded[mode][dayNum() % allLoaded[mode].length]);
       else toast('Dieses Datum gibt es nur mit Verbindung zum Pi.');
     }).catch(function () { toast('Keine Verbindung zum Pi.'); });
   }
   function startPuzzle(p) {                               // konkretes Rätsel (Tag oder Permalink)
     puzzle = p;
+    setMode(p.tiles.length === 8 ? 8 : 9, true);          // Umschalter folgt dem Rätsel (Permalink)
     if (typeof p.day === 'number') selectedDay = p.day;   // Datumsleiste folgt dem Rätsel
     buildDateBar();
     try { history.replaceState(null, '', '?p=' + p.id); } catch (e) {}  // URL = Lesezeichen
@@ -191,7 +199,7 @@
     var outer = p.tiles.slice();
     outer.splice(outer.indexOf(p.center), 1);             // eine Instanz der Mitte raus
     shuffleArr(outer);
-    layout = [{ letter: p.center, used: false }];
+    layout = [{ letter: p.center, used: false }];         // 8er: nur 7 Außenfelder, das 9. Feld ist ⟳
     outer.forEach(function (ch) { layout.push({ letter: ch, used: false }); });
 
     buildHive(); renderCurrent(); renderFound(); renderStats();
@@ -208,9 +216,19 @@
     var order = [1, 2, 3, 4, 0, 5, 6, 7, 8];             // Zeilen-Reihenfolge; layout[0] landet im Zentrum
     order.forEach(function (li) {
       var cell = layout[li];
+      if (!cell) {                                        // 8er: Feld unten rechts = Mischen-Knopf
+        var sb = document.createElement('button');
+        sb.className = 'cell shufcell';
+        sb.title = 'Mischen'; sb.setAttribute('aria-label', 'Mischen');
+        sb.innerHTML = '<span>⟳</span>';
+        sb.addEventListener('click', doShuffle);
+        hive.appendChild(sb);
+        cellEls[li] = sb;
+        return;
+      }
       var b = document.createElement('button');
       b.className = 'cell' + (li === 0 ? ' center' : '') + (cell.used ? ' used' : '');
-      b.innerHTML = '<span>' + up(cell.letter) + '</span>';
+      b.innerHTML = '<span>' + up(cell.letter) + '</span><i class="v">' + (LETTER_VALUE[cell.letter] || 0) + '</i>';
       b.addEventListener('click', function () { type(li); });
       hive.appendChild(b);
       cellEls[li] = b;                                    // cellEls bleibt nach layout-Index indiziert
@@ -227,6 +245,12 @@
     });
     var caret = document.createElement('span'); caret.className = 'caret';
     current.appendChild(caret);
+    var val = document.createElement('small'); val.className = 'curval';   // leiser Live-Wert, absolut → kein Springen
+    if (inputIdx.length) {
+      val.textContent = '· ' + letterSum(word()) + (inputIdx.length === nTiles() ? ' +' + PANGRAM_BONUS : '');
+      val.title = 'Wortwert';
+    }
+    current.appendChild(val);
   }
   function renderFound() {
     // im Spiel nur gefundene (grün); nach Aufgeben alle eingereiht (fehlende gedämpft rot)
@@ -238,7 +262,7 @@
       // Nur die Anzeige ist klein — w bleibt original-cased (Wiktionary-Lookup/Link
       // brauchen die echte Groß-/Kleinschreibung, s. showDef/renderDef unten).
       s.textContent = w.toLowerCase();
-      s.className = (found.has(w) ? 'got' : 'miss') + (w.length === 9 ? ' pan' : '');
+      s.className = (found.has(w) ? 'got' : 'miss') + (w.length === nTiles() ? ' pan' : '');
       s.addEventListener('click', function (e) { e.stopPropagation(); toggleDef(w, s); });
       if (HOVER) {
         s.addEventListener('mouseenter', function () { if (!defpop.dataset.pin) showDef(w, s, false); });
@@ -247,13 +271,19 @@
       foundEl.appendChild(s);
     });
   }
+  pbar.addEventListener('click', function () { toast(detail); });
   function renderStats() {
     var pts = 0;
     found.forEach(function (w) { pts += scoreWord(w); });
-    var total = puzzle.words.length, max = puzzle.maxScore;
-    statsEl.innerHTML =
-      '<div><b>' + pts + '</b>/' + max + ' Pkt · ' + (max ? Math.round(pts / max * 100) : 0) + ' %</div>' +
-      '<div><b>' + found.size + '</b>/' + total + ' Wörter · ' + (total ? Math.round(found.size / total * 100) : 0) + ' %</div>';
+    var total = puzzle.words.length, max = 0;
+    puzzle.words.forEach(function (w) { max += scoreWord(w); });   // nicht puzzle.maxScore: der Pool trägt alte Werte
+    var pct = max ? Math.round(pts / max * 100) : 0;
+    detail = pts + '/' + max + ' Pkt · ' + found.size + '/' + total + ' Wörter';
+    pbar.title = detail; pbar.setAttribute('aria-valuenow', pct);
+    pbar.setAttribute('aria-label', detail);
+    pfill.style.width = pct + '%'; pnum.textContent = pts + ' / ' + max;
+    pbar.classList.toggle('half', pct >= 50);   // ab 50 % dezent grün
+    [25, 50, 75].forEach(function (m, i) { pbar.children[i + 1].classList.toggle('hit', pct >= m); });
   }
 
   // ── Eingabe (tile-genau; benutzte Waben gesperrt) ─────────────────────────
@@ -281,7 +311,7 @@
     if (!cw) { clearInput(); return toast('Kein Wort'); }
     if (found.has(cw)) { clearInput(); return toast('Schon da'); }
     found.add(cw); clearInput();
-    toast(lw.length === 9 ? 'Pangramm! +' + scoreWord(lw) : '+' + scoreWord(lw), true);
+    toast(lw.length === nTiles() ? 'Pangramm! +' + scoreWord(lw) : '+' + scoreWord(lw), true);
     renderFound(); renderStats(); save();
   }
 
@@ -388,7 +418,8 @@
 
   $('del').addEventListener('click', del);
   $('enter').addEventListener('click', submit);
-  $('shuffle').addEventListener('click', function () {
+  $('shuffle').addEventListener('click', doShuffle);
+  function doShuffle() {
     if (ended) return;
     clearInput();
     var outer = layout.slice(1).map(function (c) { return c.letter; });
@@ -396,9 +427,25 @@
     layout = [layout[0]].concat(outer.map(function (ch) { return { letter: ch, used: false }; }));
     buildHive();
     hive.classList.remove('turning'); void hive.offsetWidth; hive.classList.add('turning'); // Mühle dreht
-  });
+  }
   hive.addEventListener('animationend', function () { hive.classList.remove('turning'); });
   $('giveup').addEventListener('click', giveUp);
+
+  // ── Umschalter 9 / 8 (Kopf) ─────────────────────────────────────────────────
+  function setMode(n, quiet) {                            // quiet: nur Anzeige angleichen, nichts starten
+    mode = n;
+    try { localStorage.setItem(MODE_KEY, String(n)); } catch (e) {}
+    $('mode-9').classList.toggle('sel', n === 9);
+    $('mode-8').classList.toggle('sel', n === 8);
+    $('mode-9').setAttribute('aria-pressed', n === 9 ? 'true' : 'false');
+    $('mode-8').setAttribute('aria-pressed', n === 8 ? 'true' : 'false');
+    $('shuffle').hidden = (n === 8);                      // 8er mischt über das ⟳-Feld, nicht doppelt
+  }
+  document.querySelector('.modeseg').addEventListener('click', function () {   // Tipp irgendwo auf dem Schalter = zum anderen Modus
+    save();                                               // laufenden Fortschritt sichern, dann wechseln
+    setMode(mode === 9 ? 8 : 9); buildDateBar(); start();
+  });
+  setMode(mode, true);
 
   // ── Datums-Auswahl (letzte 7 Tage; fett = im Browser, grau = nur mit Pi-Verbindung) ──
   function buildDateBar() {

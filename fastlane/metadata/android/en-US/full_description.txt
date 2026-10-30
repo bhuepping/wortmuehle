@@ -1,10 +1,10 @@
-Wortmühle ("word mill") is a daily German word puzzle: build as many German words as you can from the nine letters on the 3×3 mill board. Every word must use the center letter, and every puzzle contains at least one pangram — a word using all nine letters.
+Wortmühle ("word mill") is a daily German word puzzle: build as many German words as you can from nine (or eight) letters on the 3×3 mill board. Every word must use the center letter, and every puzzle contains at least one pangram — a word using all the letters.
 
 Features:
 
 • One new puzzle every day, with the last seven days replayable
-• 2500 puzzles built in — one a day for almost seven years, fully offline
-• Scoring based on German Scrabble letter values, with a pangram bonus
+• Two daily puzzles: 9 and 8 letters — 2500 nine-letter and 3000 eight-letter puzzles built in, fully offline
+• Scoring with own letter values (1–4), with a pangram bonus
 • Tap a found word for its definition — bundled, no network needed
 • Light/dark mode selectable (follows the system otherwise)
 • No permissions, no tracking, no ads, no accounts, no Google services

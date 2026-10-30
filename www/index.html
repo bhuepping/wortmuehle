@@ -10,14 +10,18 @@
 <body>
   <main class="game" id="game">
     <header class="top">
-      <h1>Wortmühle</h1>
+      <div class="modeseg" role="group" aria-label="Buchstaben">
+        <button id="mode-9" title="9 Buchstaben">9</button>
+        <button id="mode-8" title="8 Buchstaben">8</button>
+      </div>
+      <div class="pbar" id="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+        <i class="pfill" id="pfill"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u><b class="pnum" id="pnum"></b>
+      </div>
       <div class="datewrap">
         <button class="datebtn" id="date-btn" aria-haspopup="true" aria-expanded="false" hidden>Heute ▾</button>
         <div class="datepop" id="date-pop" role="menu" aria-label="Datum wählen" hidden></div>
       </div>
     </header>
-
-    <div class="stats" id="stats"></div>
 
     <div class="current" id="current"><span class="caret"></span></div>
 
@@ -47,10 +51,9 @@
     <div class="loading" id="loading">lädt …</div>
   </main>
 
-  <script>window.POOL_URL = './pool.json';   /* full pool, baked into the APK */
-          window.PUZZLE_URL = './p/';        /* unused offline: every id resolves locally */
-          window.LOOKUP_DEFAULT = true;      /* explanations ship inside the APK (defs.js) —
-                                                nothing is fetched, so no reason to default off */</script>
+  <script>window.POOL_URL = './pool.json';   /* voller Pool, im APK eingebacken */
+          window.POOL8_URL = './pool8.json';
+          window.PUZZLE_URL = './p/';        /* offline ungenutzt: jede ID löst lokal auf */</script>
   <script src="defs.js"></script>
   <script src="wortmuehle.js"></script>
 </body>
