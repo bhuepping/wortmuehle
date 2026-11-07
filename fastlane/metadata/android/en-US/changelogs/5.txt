@@ -1,0 +1,1 @@
+• Letter taps are no longer lost (fast two-thumb typing, long press)
