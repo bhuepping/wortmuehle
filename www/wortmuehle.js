@@ -210,6 +210,17 @@
   // String.toUpperCase()/CSS text-transform per Unicode-Default machen würden.
   function up(ch) { return String(ch).replace(/ß/g, 'ẞ').toUpperCase(); }
 
+  // Tipp zählt beim Aufsetzen (pointerdown), nicht erst als 'click': Android lässt
+  // den click fallen, sobald ein 2. Finger landet, bevor der 1. hoch ist (zwei Daumen
+  // tippen schnell) — Issue #1. click nur noch für Tastatur (detail 0).
+  function onPress(el, fn) {
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button || el.disabled) return;
+      e.preventDefault(); fn();
+    });
+    el.addEventListener('click', function (e) { if (e.detail === 0) fn(); });
+  }
+
   // ── Wabe als Blüte: Mitte + 8 Blütenblätter rotationssymmetrisch im Kreis ──
   function buildHive() {                                  // 3×3-Mühle, Mitte = layout[0]
     hive.innerHTML = ''; cellEls = [];
@@ -221,7 +232,7 @@
         sb.className = 'cell shufcell';
         sb.title = 'Mischen'; sb.setAttribute('aria-label', 'Mischen');
         sb.innerHTML = '<span>⟳</span>';
-        sb.addEventListener('click', doShuffle);
+        onPress(sb, doShuffle);
         hive.appendChild(sb);
         cellEls[li] = sb;
         return;
@@ -229,7 +240,7 @@
       var b = document.createElement('button');
       b.className = 'cell' + (li === 0 ? ' center' : '') + (cell.used ? ' used' : '');
       b.innerHTML = '<span>' + up(cell.letter) + '</span><i class="v">' + (LETTER_VALUE[cell.letter] || 0) + '</i>';
-      b.addEventListener('click', function () { type(li); });
+      onPress(b, function () { type(li); });
       hive.appendChild(b);
       cellEls[li] = b;                                    // cellEls bleibt nach layout-Index indiziert
     });
@@ -416,7 +427,7 @@
     }
   }
 
-  $('del').addEventListener('click', del);
+  onPress($('del'), del);
   $('enter').addEventListener('click', submit);
   $('shuffle').addEventListener('click', doShuffle);
   function doShuffle() {
